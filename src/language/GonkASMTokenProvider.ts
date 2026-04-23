@@ -17,7 +17,20 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 
 	separator: /,/,
 
-	registers: /%[a-zA-Z]+/,
+	registers: [
+		'bill', 'charlie', 'tim',
+		'bill_h', 'charlie_h', 'tim_h',
+		'bill_l', 'charlie_l', 'tim_l',
+		'b', 'c', 't',
+		'b_h', 'c_h', 't_h',
+		'b_l', 'c_l', 't_l',
+
+		'microwave', 'm',
+
+		'paul',
+
+		'canada',
+	],
 
 	immediate: /[0-9]+/,
 	immediateHex: /0[xX][0-9a-fA-F]+/,
@@ -39,18 +52,16 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 				cases: {
 					'@commands': 'command',
 					'@instructions': 'instruction',
+					'@registers': 'register',
 					'@default': 'identifier'
 				}
 			}],
-
-			// registers
-			[/@registers/, 'register'],
 
 			// whitespace
 			{ include: '@whitespace' },
 
 			// labels
-			[/(^@label)(\s+)(@identifier)/, ['label', 'whitespace', 'identifier']],
+			[/(^@label)(\s+)(@identifier)/, ['label', 'white', 'identifier']],
 
 			// argument separator
 			[/@separator/, 'separator'],
@@ -63,6 +74,7 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 			[/@macro/, 'macro'],
 
 			// ram address brackets
+			// eslint-disable-next-line
 			[/[\[\]]/, 'rambracket'],
 
 			// strings

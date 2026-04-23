@@ -8,6 +8,7 @@ import GonkASMEditorTopbar from './GonkASMEditorTopbar';
 
 function GonkASMEditor() {
 	const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
+	const monacoRef = useRef<Monaco>(null);
 
 	function registerGonkASM(monaco: Monaco) {
 		monaco.languages.register({ id: "gonkASM" });
@@ -19,23 +20,22 @@ function GonkASMEditor() {
 		monaco.editor.defineTheme("gonkTheme", GonkASMThemeData);
 	}
 
-	function handleEditorMount(editor: editor.IStandaloneCodeEditor, _monaco: Monaco) {
+	function handleEditorMount(editor: editor.IStandaloneCodeEditor, monaco: Monaco) {
 		editorRef.current = editor;
+		monacoRef.current = monaco;
 	}
 
 	const code = [
-		"$INCLUDE \"io.gonk\" 		; someone else already wrote io for us; thats nice!",
-		"",
 		".label msg				; the strings name is msg when we're coding",
 		"istr \"hello world!\\n\"	; store a string somewhere with this value",
 		"",
 		".label start			; program start",
-		"move 1, %bill			; bill = 1",
-		"move 2, %charlie		; charlie = 2",
-		"add %bill, %charlie		; charlie = charlie+bill = 3",
+		"move 1 bill				; bill = 1",
+		"move 2 charlie			; charlie = 2",
+		"add bill charlie		; charlie = charlie+bill = 3",
 		"",
-		"comp %bill, %charlie	; check if bill is <, >, =, or != to charlie",
-		"move print, %microwave	; set our jump address to the instruction at print",
+		"comp bill charlie		; check if bill is <, >, =, or != to charlie",
+		"move print microwave	; set our jump address to the instruction at print",
 		"jumpne					; jump to microwave if bill != charlie",
 		"stop					; stop is skipped by jumpne",
 		"",
@@ -45,7 +45,8 @@ function GonkASMEditor() {
 
 	return <>
 		<GonkASMEditorTopbar
-			ref={editorRef}
+			editorRef={editorRef}
+			monacoRef={monacoRef}
 		/>
 		<Editor
 			height="90vh"

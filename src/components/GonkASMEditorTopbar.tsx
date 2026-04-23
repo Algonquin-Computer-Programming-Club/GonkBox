@@ -1,15 +1,24 @@
+import { Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
-import { RefObject } from "react";
+import { RefObject, useRef } from "react";
+import GonkASMParser from "../parser/GonkASMParser";
 
 type GonkASMEditorTopbarProps = {
-	ref: RefObject<editor.IStandaloneCodeEditor | null>
+	editorRef: RefObject<editor.IStandaloneCodeEditor | null>
+	monacoRef: RefObject<Monaco | null>
 }
 
 function GonkASMEditorTopbar({
-	ref,
+	editorRef,
+	monacoRef,
 }: GonkASMEditorTopbarProps) {
+	const parser = useRef<GonkASMParser>(null);
 	function compile() {
-		alert(ref?.current?.getValue());
+		if (!parser.current)
+			parser.current = new GonkASMParser();
+
+		if (editorRef.current && monacoRef.current)
+			parser.current.parse(editorRef.current.getValue(), monacoRef.current);
 	}
 	return <>
 		<button onClick={compile}>Compile</button>
