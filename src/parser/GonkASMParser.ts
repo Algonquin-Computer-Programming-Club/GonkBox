@@ -42,7 +42,6 @@ class GonkASMParser {
 	processMonarchToken(source: string, t: Token, next: Token | null, preparedTokens: GonkASMToken[]) {
 		let value: string = source.substring(t.offset, next ? next.offset : source.length).trim();
 		let type: GonkASMTokenType = tokenTypeMap[t.type];
-		console.log(t.type, type);
 		if (type === undefined) return;
 
 		preparedTokens.push(new GonkASMToken(value, type));

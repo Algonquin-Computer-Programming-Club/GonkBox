@@ -1,28 +1,84 @@
 body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
+	margin: 0;
+	font-family: 'Segoe UI', sans-serif;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+	font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+	monospace;
 }
 
 .App {
-  text-align: left;
-}
-
-.App-header {
-  background-color: #000000;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+	text-align: left;
 }
 
 .App-link {
-  color: #61dafb;
+	color: #61dafb;
 }
+
+.GonkASMEditor {
+	display: grid;
+	min-width: 100vw;
+	max-width: 100vw;
+	min-height: 100vh;
+	max-height: 100vh;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: minmax(0,1fr) minmax(0,18fr);
+}
+
+.GonkASMEditorWindow {
+	grid-row: 2;
+	grid-column: 1;
+}
+
+.GonkASMGuide {
+	grid-row: 2;
+	grid-column: 2;
+	color: black;
+	overflow-y: scroll;
+	min-width: 0;
+	min-height: 0;
+	padding-left: 8pt;
+	padding-right: 8pt;
+}
+
+.GonkASMEditorTopbar {
+	border-bottom: solid black 4px;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: left;
+	padding: 0;
+	background-color: lightgray;
+}
+
+button {
+	display: inline-block;
+	background-color: white;
+	color: black;
+	border: solid black 2px;
+	box-sizing: border-box;
+	margin: 0;
+	width: 10em;
+	height: 100%;
+	cursor: pointer;
+}
+
+button:hover {
+	background-color: lightgray;
+}
+
+.GonkASMEditorHeader {
+	min-height: 0;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: right;
+	font-size: 11pt;
+	background-color: lightgray;
+	color: black;
+	gap: 8pt;
+	padding-right: 8pt;
+	border-bottom: solid black 4px
+}
+

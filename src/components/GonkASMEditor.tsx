@@ -1,14 +1,32 @@
 import Editor, { Monaco } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { GonkASMCompletionItemProvider } from '../language/GonkASMCompletionItemProvider';
 import { GonkASMThemeData } from '../language/GonkASMThemeData';
 import { GonkASMTokenProvider } from '../language/GonkASMTokenProvider';
-import GonkASMEditorTopbar from './GonkASMEditorTopbar';
+import GonkASMEditorHeader from './GonkASMEditorHeader';
+import GonkASMGuide from '../guide/GonkASMGuide';
+import GonkASMParser from '../parser/GonkASMParser';
 
 function GonkASMEditor() {
 	const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
 	const monacoRef = useRef<Monaco>(null);
+	const parser = useRef<GonkASMParser>(null);
+
+	let [guide, setGuide] = useState(false);
+
+	function compile() {
+		if (!parser.current)
+			parser.current = new GonkASMParser();
+
+		if (editorRef.current && monacoRef.current)
+			parser.current.parse(editorRef.current.getValue(), monacoRef.current);
+	}
+	function toggleGuide() {
+		if (editorRef.current)
+			editorRef.current.layout({} as editor.IDimension);
+		setGuide(!guide);
+	}
 
 	function registerGonkASM(monaco: Monaco) {
 		monaco.languages.register({ id: "gonkASM" });
@@ -43,21 +61,29 @@ function GonkASMEditor() {
 		"$PRINT msg				; macro for printing (see I/O)",
 	].join('\n');
 
-	return <>
-		<GonkASMEditorTopbar
-			editorRef={editorRef}
-			monacoRef={monacoRef}
-		/>
-		<Editor
-			height="90vh"
-			width="100vw"
-			defaultLanguage="gonkASM"
-			defaultValue={code}
-			beforeMount={registerGonkASM}
-			onMount={handleEditorMount}
-			theme="gonkTheme"
-		/>
-	</>;
+	return <div className="GonkASMEditor">
+		<div className="GonkASMEditorTopbar">
+			<button id="CompileButton" onClick={compile}>Compile</button>
+			<button id="RunButton" onClick={compile}>Run</button>
+			<button id="GuideButton" onClick={toggleGuide}>Guide</button>
+		</div>
+		<GonkASMEditorHeader />
+		<div className="GonkASMEditorWindow" style={{ gridColumn: guide ? "span 1" : "span 2" }}>
+			<Editor
+				defaultLanguage="gonkASM"
+				defaultValue={code}
+				beforeMount={registerGonkASM}
+				onMount={handleEditorMount}
+				theme="gonkTheme"
+				options={{
+					minimap: {
+						enabled: false
+					}
+				}}
+			/>
+		</div>
+		{guide && <GonkASMGuide />}
+	</div>;
 };
 
 export default GonkASMEditor;
