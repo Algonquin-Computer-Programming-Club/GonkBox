@@ -39,8 +39,8 @@ bytes aren't big enough to address the entirety of the GonkBox's RAM, so RAM
 addresses must be words (which have 256x the range).
 
 To get the value of the byte or word in RAM at a given address, put the address
-between `[` and `]` symbols. For example, the value of the fourth byte in ram is
-`[4]`, and the value of the word charlie points to is `[charlie]`.
+between after a `*` symbol. For example, the value of the word at the fourth byte
+in ram is `*4`, and the value of the word charlie points to is `*charlie`.
 
 ### Instructions
 | Mnemonic | Arguments        | Purpose                                      |

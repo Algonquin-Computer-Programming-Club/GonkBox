@@ -52,6 +52,45 @@ export const GonkASMCompletionItemProvider = (monaco: Monaco) => {
 				},
 
 				{
+					label: "inc",
+					kind: monaco.languages.CompletionItemKind.Keyword,
+					// eslint-disable-next-line
+					insertText: "add ${1:arg}",
+					insertTextRules:
+						monaco.languages.CompletionItemInsertTextRule
+							.InsertAsSnippet,
+					range: range,
+
+					documentation: "**inc:** Increment `arg` by 1"
+				},
+
+				{
+					label: "dec",
+					kind: monaco.languages.CompletionItemKind.Keyword,
+					// eslint-disable-next-line
+					insertText: "dec ${1:arg}",
+					insertTextRules:
+						monaco.languages.CompletionItemInsertTextRule
+							.InsertAsSnippet,
+					range: range,
+
+					documentation: "**dec:** Decrement `arg` by 1"
+				},
+
+				{
+					label: "flip",
+					kind: monaco.languages.CompletionItemKind.Keyword,
+					// eslint-disable-next-line
+					insertText: "flip ${1:arg}",
+					insertTextRules:
+						monaco.languages.CompletionItemInsertTextRule
+							.InsertAsSnippet,
+					range: range,
+
+					documentation: "**flip:** Transform `arg` into it's opposite (two's complement)"
+				},
+
+				{
 					label: "comp",
 					kind: monaco.languages.CompletionItemKind.Keyword,
 					// eslint-disable-next-line
