@@ -1,6 +1,6 @@
 import { Monaco } from '@monaco-editor/react';
-import { Token } from 'monaco-editor';
-import { GonkASMToken, GonkASMTokenType, buildGonkASMProgram } from 'gonkbox-emu'
+import { MarkerSeverity, Token } from 'monaco-editor';
+import { GonkASMToken, GonkASMTokenType, buildGonkASMProgram, ParseError } from 'gonkbox-emu'
 
 const tokenTypeMap: Record<string, GonkASMTokenType> = {
 	"command.gonkASM": GonkASMTokenType.Command,
@@ -30,21 +30,42 @@ class GonkASMParser {
 		for (let i = 0; i < sourceLines.length; i++) {
 			let tokens = lines[i];
 			for (let j: number = 0; j < tokens.length; j++) {
-				this.processMonarchToken(sourceLines[i],
+				this.processMonarchToken(sourceLines[i], i,
 					tokens[j], j !== tokens.length - 1 ? tokens[j + 1] : null,
 					preparedTokens);
 			}
 		}
 
-		buildGonkASMProgram(preparedTokens);
+		try {
+			let program = buildGonkASMProgram(preparedTokens);
+			console.log(program);
+			monaco.editor.removeAllMarkers("GonkASMParser");
+		} catch (err) {
+			console.log("AAAAAAAAAAAAA");
+			if (err instanceof ParseError) {
+				console.log("2 AAAAAAAAAAAAA");
+				let token = err.get_token();
+				console.log(err);
+				if (token) {
+					monaco.editor.setModelMarkers(monaco.editor.getModels()[0], "GonkASMParser", [{
+						startLineNumber: token.get_line() + 1,
+						endLineNumber: token.get_line() + 1,
+						startColumn: token.get_range_start(),
+						endColumn: token.get_range_end() + 1,
+						message: err.get_description(),
+						severity: MarkerSeverity.Error,
+					}]);
+				}
+			}
+		}
 	}
 
-	processMonarchToken(source: string, t: Token, next: Token | null, preparedTokens: GonkASMToken[]) {
+	processMonarchToken(source: string, line: number, t: Token, next: Token | null, preparedTokens: GonkASMToken[]) {
 		let value: string = source.substring(t.offset, next ? next.offset : source.length).trim();
 		let type: GonkASMTokenType = tokenTypeMap[t.type];
 		if (type === undefined) return;
 
-		preparedTokens.push(new GonkASMToken(value, type));
+		preparedTokens.push(new GonkASMToken(value, type, line, t.offset, value.length));
 	}
 }
 

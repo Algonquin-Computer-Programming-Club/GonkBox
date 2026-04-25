@@ -51,13 +51,50 @@ pub enum GonkASMTokenType {
 pub struct GonkASMToken {
     value: String,
     token_type: GonkASMTokenType,
+    line: usize,
+    range_start: usize,
+    range_end: usize,
 }
 
 #[wasm_bindgen]
 impl GonkASMToken {
     #[wasm_bindgen(constructor)]
-    pub fn new(value: String, token_type: GonkASMTokenType) -> GonkASMToken {
-        GonkASMToken { value, token_type }
+    pub fn new(
+        value: String,
+        token_type: GonkASMTokenType,
+        line: usize,
+        range_start: usize,
+        range_end: usize,
+    ) -> GonkASMToken {
+        GonkASMToken {
+            value,
+            token_type,
+            line,
+            range_start,
+            range_end,
+        }
+    }
+
+    fn test_new(value: String, token_type: GonkASMTokenType) -> GonkASMToken {
+        GonkASMToken {
+            value,
+            token_type,
+            line: 0,
+            range_start: 0,
+            range_end: 0,
+        }
+    }
+
+    pub fn get_line(&self) -> usize {
+        self.line
+    }
+
+    pub fn get_range_start(&self) -> usize {
+        self.range_start
+    }
+
+    pub fn get_range_end(&self) -> usize {
+        self.range_end
     }
 }
 
@@ -430,6 +467,17 @@ pub struct ParseError {
     error_type: ParseErrorType,
     description: &'static str,
     token: Option<GonkASMToken>,
+}
+
+#[wasm_bindgen]
+impl ParseError {
+    pub fn get_description(&self) -> String {
+        self.description.to_owned()
+    }
+
+    pub fn get_token(&self) -> Option<GonkASMToken> {
+        self.token.clone()
+    }
 }
 
 fn parse_string(input: &Vec<GonkASMToken>, start_i: usize) -> Result<(String, usize), ParseError> {
@@ -952,10 +1000,13 @@ fn expand_macro(tokens: &Vec<GonkASMToken>, index: usize) -> Result<Vec<GonkASMT
 
     let mut new_tokens: Vec<GonkASMToken> = Vec::new();
     for template_token in macro_definition.result {
-        let mut token = GonkASMToken::new(
-            String::from(template_token.value),
-            template_token.token_type,
-        );
+        let mut token = GonkASMToken {
+            value: String::from(template_token.value),
+            token_type: template_token.token_type,
+            line: tokens[index].line,
+            range_start: tokens[index].range_start,
+            range_end: tokens[index + 1].range_end,
+        };
         if template_token.value == macro_definition.placeholder {
             token.value = tokens[index + 1].value.clone();
             token.token_type = macro_definition.placeholder_type;
@@ -1214,18 +1265,9 @@ mod parser_tests {
     #[test]
     fn single_instruction() {
         let tokens = vec![
-            GonkASMToken {
-                value: String::from("move"),
-                token_type: GonkASMTokenType::Instruction,
-            },
-            GonkASMToken {
-                value: String::from("charlie"),
-                token_type: GonkASMTokenType::Register,
-            },
-            GonkASMToken {
-                value: String::from("bill"),
-                token_type: GonkASMTokenType::Register,
-            },
+            GonkASMToken::test_new(String::from("move"), GonkASMTokenType::Instruction),
+            GonkASMToken::test_new(String::from("charlie"), GonkASMTokenType::Register),
+            GonkASMToken::test_new(String::from("bill"), GonkASMTokenType::Register),
         ];
         let program = build_gonkbox_program(tokens);
         assert!(matches!(program, Ok(_)), "{program:#?}");
@@ -1236,65 +1278,26 @@ mod parser_tests {
         let tokens = vec![
             // command 1
             // label start
-            GonkASMToken {
-                value: String::from(".label"),
-                token_type: GonkASMTokenType::Label,
-            },
-            GonkASMToken {
-                value: String::from("start"),
-                token_type: GonkASMTokenType::Identifier,
-            },
+            GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
+            GonkASMToken::test_new(String::from("start"), GonkASMTokenType::Identifier),
             // instruction 1
             // insert 4 into bill
-            GonkASMToken {
-                value: String::from("move"),
-                token_type: GonkASMTokenType::Instruction,
-            },
-            GonkASMToken {
-                value: String::from("4"),
-                token_type: GonkASMTokenType::ImmediateLiteral,
-            },
-            GonkASMToken {
-                value: String::from("bill"),
-                token_type: GonkASMTokenType::Register,
-            },
+            GonkASMToken::test_new(String::from("move"), GonkASMTokenType::Instruction),
+            GonkASMToken::test_new(String::from("4"), GonkASMTokenType::ImmediateLiteral),
+            GonkASMToken::test_new(String::from("bill"), GonkASMTokenType::Register),
             // instruction 2
             // insert 5 into charlie
-            GonkASMToken {
-                value: String::from("move"),
-                token_type: GonkASMTokenType::Instruction,
-            },
-            GonkASMToken {
-                value: String::from("5"),
-                token_type: GonkASMTokenType::ImmediateLiteral,
-            },
-            GonkASMToken {
-                value: String::from("charlie"),
-                token_type: GonkASMTokenType::Register,
-            },
+            GonkASMToken::test_new(String::from("move"), GonkASMTokenType::Instruction),
+            GonkASMToken::test_new(String::from("5"), GonkASMTokenType::ImmediateLiteral),
+            GonkASMToken::test_new(String::from("charlie"), GonkASMTokenType::Register),
             // instruction 3
             // compare bill and charlie
-            GonkASMToken {
-                value: String::from("comp"),
-                token_type: GonkASMTokenType::Instruction,
-            },
-            GonkASMToken {
-                value: String::from("bill"),
-                token_type: GonkASMTokenType::Register,
-            },
-            GonkASMToken {
-                value: String::from("charlie"),
-                token_type: GonkASMTokenType::Register,
-            },
+            GonkASMToken::test_new(String::from("comp"), GonkASMTokenType::Instruction),
+            GonkASMToken::test_new(String::from("bill"), GonkASMTokenType::Register),
+            GonkASMToken::test_new(String::from("charlie"), GonkASMTokenType::Register),
             // print bill
-            GonkASMToken {
-                value: String::from("$PRINT"),
-                token_type: GonkASMTokenType::Macro,
-            },
-            GonkASMToken {
-                value: String::from("bill"),
-                token_type: GonkASMTokenType::Register,
-            },
+            GonkASMToken::test_new(String::from("$PRINT"), GonkASMTokenType::Macro),
+            GonkASMToken::test_new(String::from("bill"), GonkASMTokenType::Register),
         ];
         let program = build_gonkbox_program(tokens);
         assert!(matches!(program, Ok(_)), "{program:#?}");
@@ -1303,14 +1306,11 @@ mod parser_tests {
     #[test]
     fn single_command() {
         let tokens = vec![
-            GonkASMToken {
-                value: String::from("istr"),
-                token_type: GonkASMTokenType::Command,
-            },
-            GonkASMToken {
-                value: String::from("\"Hello, world!\""),
-                token_type: GonkASMTokenType::StringLiteral,
-            },
+            GonkASMToken::test_new(String::from("istr"), GonkASMTokenType::Command),
+            GonkASMToken::test_new(
+                String::from("\"Hello, world!\""),
+                GonkASMTokenType::StringLiteral,
+            ),
         ];
         let program = build_gonkbox_program(tokens);
         assert!(matches!(program, Ok(_)), "{program:#?}");
@@ -1319,30 +1319,12 @@ mod parser_tests {
     #[test]
     fn multi_label() {
         let tokens = vec![
-            GonkASMToken {
-                value: String::from(".label"),
-                token_type: GonkASMTokenType::Label,
-            },
-            GonkASMToken {
-                value: String::from("first"),
-                token_type: GonkASMTokenType::Identifier,
-            },
-            GonkASMToken {
-                value: String::from("stop"),
-                token_type: GonkASMTokenType::Instruction,
-            },
-            GonkASMToken {
-                value: String::from(".label"),
-                token_type: GonkASMTokenType::Label,
-            },
-            GonkASMToken {
-                value: String::from("second"),
-                token_type: GonkASMTokenType::Identifier,
-            },
-            GonkASMToken {
-                value: String::from("stop"),
-                token_type: GonkASMTokenType::Instruction,
-            },
+            GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
+            GonkASMToken::test_new(String::from("first"), GonkASMTokenType::Identifier),
+            GonkASMToken::test_new(String::from("stop"), GonkASMTokenType::Instruction),
+            GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
+            GonkASMToken::test_new(String::from("second"), GonkASMTokenType::Identifier),
+            GonkASMToken::test_new(String::from("stop"), GonkASMTokenType::Instruction),
         ];
         let program = build_gonkbox_program(tokens);
         assert!(matches!(program, Ok(_)), "{program:#?}");
@@ -1351,30 +1333,12 @@ mod parser_tests {
     #[test]
     fn reused_label() {
         let tokens = vec![
-            GonkASMToken {
-                value: String::from(".label"),
-                token_type: GonkASMTokenType::Label,
-            },
-            GonkASMToken {
-                value: String::from("test"),
-                token_type: GonkASMTokenType::Identifier,
-            },
-            GonkASMToken {
-                value: String::from("stop"),
-                token_type: GonkASMTokenType::Instruction,
-            },
-            GonkASMToken {
-                value: String::from(".label"),
-                token_type: GonkASMTokenType::Label,
-            },
-            GonkASMToken {
-                value: String::from("test"),
-                token_type: GonkASMTokenType::Identifier,
-            },
-            GonkASMToken {
-                value: String::from("stop"),
-                token_type: GonkASMTokenType::Instruction,
-            },
+            GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
+            GonkASMToken::test_new(String::from("test"), GonkASMTokenType::Identifier),
+            GonkASMToken::test_new(String::from("stop"), GonkASMTokenType::Instruction),
+            GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
+            GonkASMToken::test_new(String::from("test"), GonkASMTokenType::Identifier),
+            GonkASMToken::test_new(String::from("stop"), GonkASMTokenType::Instruction),
         ];
         let program = build_gonkbox_program(tokens);
         assert!(
@@ -1386,14 +1350,8 @@ mod parser_tests {
     #[test]
     fn detached_label() {
         let tokens = vec![
-            GonkASMToken {
-                value: String::from(".label"),
-                token_type: GonkASMTokenType::Label,
-            },
-            GonkASMToken {
-                value: String::from("test"),
-                token_type: GonkASMTokenType::Identifier,
-            },
+            GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
+            GonkASMToken::test_new(String::from("test"), GonkASMTokenType::Identifier),
         ];
         let program = build_gonkbox_program(tokens);
         assert!(matches!(&program, Ok(_)), "{program:#?}");
@@ -1402,38 +1360,17 @@ mod parser_tests {
     #[test]
     fn print_macro() {
         let tokens = vec![
-            GonkASMToken {
-                value: String::from(".label"),
-                token_type: GonkASMTokenType::Label,
-            },
-            GonkASMToken {
-                value: String::from("msg"),
-                token_type: GonkASMTokenType::Identifier,
-            },
-            GonkASMToken {
-                value: String::from("istr"),
-                token_type: GonkASMTokenType::Command,
-            },
-            GonkASMToken {
-                value: String::from("\"Hello, world!\""),
-                token_type: GonkASMTokenType::StringLiteral,
-            },
-            GonkASMToken {
-                value: String::from(".label"),
-                token_type: GonkASMTokenType::Label,
-            },
-            GonkASMToken {
-                value: String::from("start"),
-                token_type: GonkASMTokenType::Identifier,
-            },
-            GonkASMToken {
-                value: String::from("$PRINT"),
-                token_type: GonkASMTokenType::Macro,
-            },
-            GonkASMToken {
-                value: String::from("msg"),
-                token_type: GonkASMTokenType::Identifier,
-            },
+            GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
+            GonkASMToken::test_new(String::from("msg"), GonkASMTokenType::Identifier),
+            GonkASMToken::test_new(String::from("istr"), GonkASMTokenType::Command),
+            GonkASMToken::test_new(
+                String::from("\"Hello, world!\""),
+                GonkASMTokenType::StringLiteral,
+            ),
+            GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
+            GonkASMToken::test_new(String::from("start"), GonkASMTokenType::Identifier),
+            GonkASMToken::test_new(String::from("$PRINT"), GonkASMTokenType::Macro),
+            GonkASMToken::test_new(String::from("msg"), GonkASMTokenType::Identifier),
         ];
         let program = build_gonkbox_program(tokens);
         assert!(matches!(&program, Ok(_)), "{program:#?}");
