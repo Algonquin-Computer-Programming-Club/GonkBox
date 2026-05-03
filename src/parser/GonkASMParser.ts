@@ -1,6 +1,6 @@
-import { Monaco } from '@monaco-editor/react';
 import { MarkerSeverity, Token } from 'monaco-editor';
-import { GonkASMToken, GonkASMTokenType, buildGonkASMProgram, ParseError } from 'gonkbox-emu'
+import { GonkASMToken, GonkASMTokenType, buildGonkASMProgram, ParseError, ProgramBinary } from 'gonkbox-emu'
+import { Monaco } from '@monaco-editor/react';
 
 const tokenTypeMap: Record<string, GonkASMTokenType> = {
 	"command.gonkASM": GonkASMTokenType.Command,
@@ -22,6 +22,8 @@ const tokenTypeMap: Record<string, GonkASMTokenType> = {
 };
 
 class GonkASMParser {
+	program: ProgramBinary | null = null;
+
 	parse(source: string, monaco: Monaco) {
 		var lines = monaco.editor.tokenize(source, "gonkASM");
 		var sourceLines = source.split("\n");
@@ -38,14 +40,13 @@ class GonkASMParser {
 
 		try {
 			let program = buildGonkASMProgram(preparedTokens);
-			console.log(program);
+			this.program = program;
+
 			monaco.editor.removeAllMarkers("GonkASMParser");
 		} catch (err) {
-			console.log("AAAAAAAAAAAAA");
 			if (err instanceof ParseError) {
-				console.log("2 AAAAAAAAAAAAA");
 				let token = err.get_token();
-				console.log(err);
+				console.error(err);
 				if (token) {
 					monaco.editor.setModelMarkers(monaco.editor.getModels()[0], "GonkASMParser", [{
 						startLineNumber: token.get_line() + 1,
@@ -66,6 +67,10 @@ class GonkASMParser {
 		if (type === undefined) return;
 
 		preparedTokens.push(new GonkASMToken(value, type, line, t.offset, value.length));
+	}
+
+	getProgram(): ProgramBinary | null {
+		return this.program;
 	}
 }
 

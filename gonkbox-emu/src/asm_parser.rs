@@ -7,7 +7,7 @@ use std::{
 
 use wasm_bindgen::prelude::*;
 
-use strum_macros::AsRefStr;
+use strum_macros::{AsRefStr, EnumIter, FromRepr};
 
 use web_sys::console;
 
@@ -157,7 +157,7 @@ pub struct LayoutObject {
 }
 
 #[repr(u8)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnumIter, FromRepr)]
 pub enum RegisterName {
     // general purpose registers
     Bill,
@@ -223,7 +223,7 @@ const REGISTER_NAMES: phf::Map<&'static str, RegisterName> = phf_map! {
 };
 
 #[repr(u8)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnumIter, FromRepr)]
 pub enum InstructionType {
     // data transfer
     Move,
@@ -392,32 +392,52 @@ const COMMAND_TYPES: phf::Map<&'static str, Descriptor<CommandType>> = phf_map! 
 };
 
 // e.g. %bill or [%charlie]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RegisterArgument {
     register_name: RegisterName,
     treat_as_address: bool,
 }
 
+impl RegisterArgument {
+    pub fn get_register_name(&self) -> RegisterName {
+        self.register_name.clone()
+    }
+
+    pub fn get_is_address(&self) -> bool {
+        self.treat_as_address
+    }
+}
+
 // e.g. 4 or [0x10]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ImmediateArgument {
     value: u16,
     treat_as_address: bool,
 }
 
+impl ImmediateArgument {
+    pub fn get_value(&self) -> u16 {
+        self.value
+    }
+
+    pub fn get_is_address(&self) -> bool {
+        self.treat_as_address
+    }
+}
+
 // e.g. print or [start]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct LabelArgument {
     identifier: String,
     treat_as_address: bool,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct StringArgument {
     value: String,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Argument {
     Register(RegisterArgument),
     Immediate(ImmediateArgument),
@@ -425,10 +445,21 @@ pub enum Argument {
     StringLiteral(StringArgument),
 }
 
+#[wasm_bindgen]
 #[derive(Debug)]
 pub struct Instruction {
     instruction_type: InstructionType,
     arguments: Vec<Argument>,
+}
+
+impl Instruction {
+    pub fn get_instruction_type(&self) -> InstructionType {
+        self.instruction_type.clone()
+    }
+
+    pub fn get_arguments(&self) -> Vec<Argument> {
+        self.arguments.to_vec()
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -465,6 +496,7 @@ pub enum ParseErrorType {
     ByteRamAddress,
 
     RegisterNeeded,
+    SizeMismatch,
 }
 
 #[wasm_bindgen]
@@ -502,6 +534,16 @@ fn parse_string(input: &Vec<GonkASMToken>, start_i: usize) -> Result<(String, us
         }
         pos += 1;
     }
+    string = match string.strip_prefix("\"") {
+        Some(r) => r.to_owned(),
+        None => String::from(""),
+    };
+    string = match string.strip_suffix("\"") {
+        Some(r) => r.to_owned(),
+        None => String::from(""),
+    };
+    string = string.replace("\\n", "\n");
+    string = string.replace("\\\\", "\\");
     Ok((string, pos - start_i))
 }
 
@@ -841,7 +883,7 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
             },
             // check if at end of string
             &TemplateGonkASMToken {
-                value: "comp",
+                value: "move",
                 token_type: GonkASMTokenType::Instruction
             },
             &TemplateGonkASMToken {
@@ -850,6 +892,18 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
             },
             &TemplateGonkASMToken {
                 value: "bill",
+                token_type: GonkASMTokenType::Register
+            },
+            &TemplateGonkASMToken {
+                value: "charlie_l",
+                token_type: GonkASMTokenType::Register
+            },
+            &TemplateGonkASMToken {
+                value: "comp",
+                token_type: GonkASMTokenType::Instruction
+            },
+            &TemplateGonkASMToken {
+                value: "charlie_l",
                 token_type: GonkASMTokenType::Register
             },
             &TemplateGonkASMToken {
@@ -879,7 +933,7 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
                 token_type: GonkASMTokenType::Macro
             },
             &TemplateGonkASMToken {
-                value: "bill_l",
+                value: "bill",
                 token_type: GonkASMTokenType::Register
             },
             // increment cursor
@@ -942,27 +996,27 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
                 token_type: GonkASMTokenType::RamBracket,
             },
             &TemplateGonkASMToken {
-                value: "0",
+                value: "2",
                 token_type: GonkASMTokenType::ImmediateLiteral,
             },
             &TemplateGonkASMToken {
                 value: "charlie",
                 token_type: GonkASMTokenType::Register,
             },
-            // check if higher byte is 0
+            // check if lower byte is 0
             &TemplateGonkASMToken {
                 value: "comp",
                 token_type: GonkASMTokenType::Instruction,
             },
             &TemplateGonkASMToken {
-                value: "charlie_h",
+                value: "charlie_l",
                 token_type: GonkASMTokenType::Register,
             },
             &TemplateGonkASMToken {
                 value: "0",
                 token_type: GonkASMTokenType::ImmediateLiteral,
             },
-            // jump if 0
+            // jump if not 0
             &TemplateGonkASMToken {
                 value: "move",
                 token_type: GonkASMTokenType::Instruction,
@@ -976,16 +1030,44 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
                 token_type: GonkASMTokenType::Register,
             },
             &TemplateGonkASMToken {
-                value: "jumpe",
+                value: "jumpne",
                 token_type: GonkASMTokenType::Instruction,
             },
-            // finally, write the byte
+            // finally, write the character
             &TemplateGonkASMToken {
                 value: "move",
                 token_type: GonkASMTokenType::Instruction,
             },
             &TemplateGonkASMToken {
+                value: "1",
+                token_type: GonkASMTokenType::ImmediateLiteral,
+            },
+            &TemplateGonkASMToken {
+                value: "charlie_l",
+                token_type: GonkASMTokenType::Register,
+            },
+            &TemplateGonkASMToken {
+                value: "move",
+                token_type: GonkASMTokenType::Instruction,
+            },
+            &TemplateGonkASMToken {
+                value: "*",
+                token_type: GonkASMTokenType::RamBracket,
+            },
+            &TemplateGonkASMToken {
                 value: "V",
+                token_type: GonkASMTokenType::Register,
+            },
+            &TemplateGonkASMToken {
+                value: "charlie_h",
+                token_type: GonkASMTokenType::Register,
+            },
+            &TemplateGonkASMToken {
+                value: "move",
+                token_type: GonkASMTokenType::Instruction,
+            },
+            &TemplateGonkASMToken {
+                value: "charlie",
                 token_type: GonkASMTokenType::Register,
             },
             &TemplateGonkASMToken {
@@ -993,7 +1075,7 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
                 token_type: GonkASMTokenType::RamBracket,
             },
             &TemplateGonkASMToken {
-                value: "0",
+                value: "2",
                 token_type: GonkASMTokenType::ImmediateLiteral,
             },
         ],
@@ -1221,9 +1303,14 @@ impl ArgFormatFlags {
     const FLAG_RAM_ADDRESS: ArgFormatFlags = ArgFormatFlags(0b0001);
     const FLAG_BYTE: ArgFormatFlags = ArgFormatFlags(0b0010);
     const FLAG_REGISTER: ArgFormatFlags = ArgFormatFlags(0b0100);
+    const FLAG_EXISTS: ArgFormatFlags = ArgFormatFlags(0b1000);
 
     fn empty() -> Self {
         ArgFormatFlags(0)
+    }
+
+    fn mask() -> Self {
+        ArgFormatFlags(0b00001111)
     }
 
     fn bits(&self) -> u8 {
@@ -1253,6 +1340,14 @@ impl ArgFormatFlags {
     fn set_register(&mut self) {
         self.0 = self.0 | Self::FLAG_REGISTER.0;
     }
+
+    fn exists(self) -> bool {
+        self & Self::FLAG_EXISTS == Self::FLAG_EXISTS
+    }
+
+    fn set_exists(&mut self) {
+        self.0 = self.0 | Self::FLAG_EXISTS.0;
+    }
 }
 
 impl std::ops::BitAnd for ArgFormatFlags {
@@ -1272,12 +1367,14 @@ impl std::ops::BitOr for ArgFormatFlags {
 impl std::ops::Not for ArgFormatFlags {
     type Output = Self;
     fn not(self) -> Self::Output {
-        ArgFormatFlags(!self.0 & 0b00000111)
+        ArgFormatFlags(!self.0 & 0b00001111)
     }
 }
 
 pub fn instruction_to_bytes(
     instruction: &Instruction,
+    tokens: &Vec<GonkASMToken>,
+    token_index: usize,
 ) -> Result<(Vec<u8>, Vec<(String, u16)>), ParseError> {
     let instruction_byte: u8 = instruction.instruction_type.clone() as u8;
 
@@ -1286,116 +1383,255 @@ pub fn instruction_to_bytes(
     let mut label_bytes: Vec<(String, u16)> = Vec::new();
 
     if (instruction.arguments.len() == 1) {
-        if !matches!(&instruction.arguments[0], Argument::Register(reg) if !reg.treat_as_address) {
-            return Err(ParseError {
-                error_type: ParseErrorType::RegisterNeeded,
-                description: "At least one argument must be a register.",
-                token: None,
-            });
-        }
-    } else if (instruction.arguments.len() == 2) {
-        let arg1 = &instruction.arguments[0];
-        let arg2 = &instruction.arguments[1];
-        let arg1_matches = matches!(arg1, Argument::Register(reg) if !reg.treat_as_address);
-        let arg2_matches = matches!(arg2, Argument::Register(reg) if !reg.treat_as_address);
-        if !arg1_matches && !arg2_matches {
-            return Err(ParseError {
-                error_type: ParseErrorType::RegisterNeeded,
-                description: "At least one argument must be a register.",
-                token: None,
-            });
-        }
-
-        let dest_matches = matches!(arg2, Argument::Register(reg))
-            || matches!(arg2, Argument::Immediate(immediate) if immediate.treat_as_address)
-            || matches!(arg2, Argument::Label(label) if label.treat_as_address);
-        if !dest_matches {
-            return Err(ParseError {
-                error_type: ParseErrorType::BadArgumentType,
-                description: "Destination argument must be a writeable value (register or ram address).",
-                token: None,
-            });
-        }
-
-        if let Argument::Register(dest_reg) = arg2 {
-            let dest_is_byte = is_register_byte(&dest_reg.register_name);
-            let src_matches_size = match arg1 {
-                Argument::Register(reg) => is_register_byte(&reg.register_name) == dest_is_byte,
-                Argument::Immediate(immediate) => {
-                    if (immediate.treat_as_address) {
-                        true
-                    } else {
-                        !dest_is_byte || immediate.value < 256
-                    }
-                }
-                Argument::Label(label) => {
-                    if (label.treat_as_address) {
-                        true
-                    } else {
-                        !dest_is_byte
-                    }
-                }
-                _ => {
-                    return Err(ParseError {
-                        error_type: ParseErrorType::BadArgumentType,
-                        description: "Instructions can't use string literals as arguments.",
-                        token: None,
-                    });
-                }
-            };
-            if !src_matches_size {
-                return Err(ParseError {
-                    error_type: ParseErrorType::BadArgumentType,
-                    description: "Source argument size doesn't match destination.",
-                    token: None,
-                });
-            }
-        }
-    }
-
-    for i in (0..instruction.arguments.len()) {
-        let mut argument_format = ArgFormatFlags::empty();
-        match &instruction.arguments[i] {
-            Argument::Register(register_arg) => {
-                argument_format.set_register();
-                if (register_arg.treat_as_address) {
-                    argument_format.set_ram_address();
-                }
-                if (is_register_byte(&register_arg.register_name)) {
-                    argument_format.set_byte();
-                }
-                argument_bytes.push(register_arg.register_name.clone() as u8);
-            }
-            Argument::Immediate(immediate_arg) => {
-                if (immediate_arg.treat_as_address) {
-                    argument_format.set_ram_address();
-                }
-                let bytes = util::u16_to_bytes(&immediate_arg.value);
-                argument_bytes.append(&mut bytes.to_vec());
-            }
-            Argument::Label(label_arg) => {
-                label_bytes.push((label_arg.identifier.to_owned(), (2 + i) as u16));
-                if (label_arg.treat_as_address) {
-                    argument_format.set_ram_address();
-                }
-                argument_bytes.append(&mut vec![0; 2]);
-            }
+        let arg = &instruction.arguments[0];
+        let reg = match arg {
+            Argument::Register(reg) if !reg.treat_as_address => reg,
             _ => {
                 return Err(ParseError {
-                    error_type: ParseErrorType::BadArgumentType,
-                    description: "Instructions can't use string literals as arguments.",
-                    token: None,
+                    error_type: ParseErrorType::RegisterNeeded,
+                    description: "Single argument must be a register.",
+                    token: Some(tokens[token_index].clone()),
+                });
+            }
+        };
+
+        let mut arg_format = ArgFormatFlags::empty();
+        arg_format.set_exists();
+        arg_format.set_register();
+        if reg.treat_as_address {
+            arg_format.set_ram_address();
+        }
+
+        argument_format_byte = arg_format.0;
+
+        argument_bytes.push(reg.register_name.clone() as u8);
+    } else if (instruction.arguments.len() == 2) {
+        let token = Some(tokens[token_index].clone());
+        let arg1 = &instruction.arguments[0];
+        let arg2 = &instruction.arguments[1];
+
+        let (src_pointer, src_immediate, src_byte, src_negotiable) = match arg1 {
+            Argument::Register(reg) => (
+                reg.treat_as_address,
+                false,
+                is_register_byte(&reg.register_name),
+                false,
+            ),
+            Argument::Immediate(imm) => (imm.treat_as_address, true, false, imm.get_value() < 256),
+            Argument::Label(label) => (label.treat_as_address, true, false, false),
+            _ => panic!("String literals can't be used as arguments."),
+        };
+        let src_register = !src_immediate;
+
+        let (dest_pointer, dest_immediate, dest_byte, dest_negotiable) = match arg2 {
+            Argument::Register(reg) => (
+                reg.treat_as_address,
+                false,
+                is_register_byte(&reg.register_name),
+                false,
+            ),
+            Argument::Immediate(imm) => (imm.treat_as_address, true, false, imm.get_value() < 256),
+            Argument::Label(label) => (label.treat_as_address, true, false, false),
+            _ => panic!("String literals can't be used as arguments."),
+        };
+        let dest_register = !dest_immediate;
+
+        let mut dest_decides = true;
+        if (!matches!(instruction.instruction_type, InstructionType::Comp)) {
+            // possible argument formats
+            // imm imm - cant use imm as dest
+            // reg imm - cant use imm as dest
+            // ram imm - cant use imm as dest
+            //
+            // imm reg - use dest as size, failure if dest is byte and imm > 255
+            // reg reg - use dest as size, failure if reg mismatch
+            // ram reg - use dest as size, no failure
+            //
+            // imm ram - cant put imm in ram
+            // reg ram - use src as size, no failure
+            // ram ram - cant put ram in ram
+
+            if (dest_immediate && !dest_pointer) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::NoImmediates,
+                    description: "Immediates can't be used as a destination.",
+                    token,
+                });
+            }
+
+            if (src_pointer && dest_pointer) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::RegisterNeeded,
+                    description: "RAM can't be used as a source if the destination is RAM (sizes are ambiguous).",
+                    token,
+                });
+            }
+
+            if (src_immediate && dest_pointer) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::RegisterNeeded,
+                    description: "Immediates can't be used as a source if the destination is RAM (sizes are ambiguous).",
+                    token,
+                });
+            }
+
+            dest_decides = !dest_pointer;
+
+            // dest is byte and imm > 255
+            if ((dest_decides && dest_byte) && (src_immediate && !src_pointer && !src_negotiable)) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::SizeMismatch,
+                    description: "Sizes of arguments must be equal.",
+                    token,
+                });
+            }
+
+            // register mismatch
+            if (dest_decides && (src_register && !src_pointer) && src_byte != dest_byte) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::SizeMismatch,
+                    description: "Sizes of arguments must be equal.",
+                    token,
+                });
+            }
+        } else {
+            if (dest_pointer || src_pointer) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::NoRamAddresses,
+                    description: "Pointers aren't allowed in Comp instructions.",
+                    token,
+                });
+            }
+
+            if (dest_immediate && src_immediate) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::RegisterNeeded,
+                    description: "At least one argument must be a register in a Comp instruction.",
+                    token,
+                });
+            }
+
+            if ((dest_register && src_register) && (dest_byte != src_byte)) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::SizeMismatch,
+                    description: "Sizes of arguments must be equal.",
+                    token,
+                });
+            }
+
+            if ((dest_register && src_immediate) && (dest_byte && !src_byte && !src_negotiable)) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::SizeMismatch,
+                    description: "Sizes of arguments must be equal.",
+                    token,
+                });
+            }
+
+            if ((src_register && dest_immediate) && (src_byte && !dest_byte && !dest_negotiable)) {
+                return Err(ParseError {
+                    error_type: ParseErrorType::SizeMismatch,
+                    description: "Sizes of arguments must be equal.",
+                    token,
                 });
             }
         }
-        if (argument_format.is_ram_address() && argument_format.is_byte()) {
-            return Err(ParseError {
-                error_type: ParseErrorType::ByteRamAddress,
-                description: "Bytes cannot be used as ram addresses.",
-                token: None,
-            });
+
+        let byte = if dest_decides { dest_byte } else { src_byte };
+        let mut src_arg_format = ArgFormatFlags::empty();
+        let mut dest_arg_format = ArgFormatFlags::empty();
+        src_arg_format.set_exists();
+        dest_arg_format.set_exists();
+
+        let mut offset = 2;
+        if src_register {
+            src_arg_format.set_register();
+            argument_bytes.push(argtype!(arg1, Register).register_name.clone() as u8);
+            offset += 1;
+            if byte {
+                src_arg_format.set_byte();
+            }
+            if src_pointer {
+                src_arg_format.set_ram_address();
+            }
+        } else {
+            if let Argument::Immediate(imm) = arg1 {
+                if src_pointer {
+                    let bytes = imm.value.to_le_bytes();
+                    argument_bytes.push(bytes[0]);
+                    argument_bytes.push(bytes[1]);
+                    src_arg_format.set_ram_address();
+                    if byte {
+                        src_arg_format.set_byte();
+                    }
+                    offset += 2;
+                } else {
+                    if byte {
+                        argument_bytes.push(imm.value as u8);
+                        src_arg_format.set_byte();
+                        offset += 1;
+                    } else {
+                        let bytes = imm.value.to_le_bytes();
+                        argument_bytes.push(bytes[0]);
+                        argument_bytes.push(bytes[1]);
+                        offset += 2;
+                    }
+                }
+            } else if let Argument::Label(label) = arg1 {
+                argument_bytes.push(0);
+                argument_bytes.push(0);
+                label_bytes.push((label.identifier.clone(), offset));
+                if src_pointer && byte {
+                    src_arg_format.set_byte();
+                }
+                offset += 2;
+            }
         }
-        argument_format_byte += argument_format.bits() << i * 4;
+
+        if dest_register {
+            dest_arg_format.set_register();
+            argument_bytes.push(argtype!(arg2, Register).register_name.clone() as u8);
+            offset += 1;
+            if byte {
+                dest_arg_format.set_byte();
+            }
+            if dest_pointer {
+                dest_arg_format.set_ram_address();
+            }
+        } else {
+            if let Argument::Immediate(imm) = arg2 {
+                if dest_pointer {
+                    let bytes = imm.value.to_le_bytes();
+                    argument_bytes.push(bytes[0]);
+                    argument_bytes.push(bytes[1]);
+                    dest_arg_format.set_ram_address();
+                    if byte {
+                        dest_arg_format.set_byte();
+                    }
+                    offset += 2;
+                } else {
+                    if byte {
+                        argument_bytes.push(imm.value as u8);
+                        dest_arg_format.set_byte();
+                        offset += 1;
+                    } else {
+                        let bytes = imm.value.to_le_bytes();
+                        argument_bytes.push(bytes[0]);
+                        argument_bytes.push(bytes[1]);
+                        offset += 2;
+                    }
+                }
+            } else if let Argument::Label(label) = arg2 {
+                argument_bytes.push(0);
+                argument_bytes.push(0);
+                label_bytes.push((label.identifier.clone(), offset));
+                if dest_pointer && byte {
+                    dest_arg_format.set_byte();
+                }
+                offset += 2;
+            }
+        }
+
+        argument_format_byte = (src_arg_format.0) + (dest_arg_format.0 << 4);
     }
 
     let mut bytes = vec![];
@@ -1406,12 +1642,167 @@ pub fn instruction_to_bytes(
     Ok((bytes, label_bytes))
 }
 
-pub fn bytes_to_instruction(bytes: Vec<u8>) -> Instruction {
-    todo!()
+#[derive(Debug)]
+pub enum ByteArgumentType {
+    Register(RegisterName),
+    Immediate(u16),
+}
+
+#[derive(Debug)]
+pub struct ByteArgument {
+    argument_type: ByteArgumentType,
+    byte: bool,
+    address: bool,
+}
+
+impl ByteArgument {
+    pub fn get_argument_type(&self) -> &ByteArgumentType {
+        &self.argument_type
+    }
+
+    pub fn is_byte(&self) -> bool {
+        self.byte
+    }
+
+    pub fn is_address(&self) -> bool {
+        self.address
+    }
+}
+
+#[derive(Debug)]
+pub struct ByteInstruction {
+    instruction_type: InstructionType,
+    arguments: Vec<ByteArgument>,
+}
+
+impl ByteInstruction {
+    pub fn get_instruction_type(&self) -> &InstructionType {
+        &self.instruction_type
+    }
+
+    pub fn get_arguments(&self) -> &Vec<ByteArgument> {
+        &self.arguments
+    }
+}
+
+pub fn bytes_to_instruction(
+    bytes: &[u8; 0x1000],
+    index: u16,
+) -> Result<ByteInstruction, ParseError> {
+    let instruction_byte = bytes[index as usize];
+    let instruction_type = InstructionType::from_repr(instruction_byte)
+        .expect("it's too late for me to handle errors. instruction type doesn't exist.");
+
+    let mut arguments: Vec<ByteArgument> = Vec::new();
+    let arg_format_byte: u8 = bytes[index as usize + 1];
+    let arg_format1 = ArgFormatFlags(arg_format_byte) & ArgFormatFlags::mask();
+    let arg_format2 = ArgFormatFlags(arg_format_byte >> 4) & ArgFormatFlags::mask();
+    let mut offset = 2;
+
+    if arg_format1.exists() {
+        if arg_format1.is_register() {
+            let name = RegisterName::from_repr(bytes[index as usize + offset]);
+            arguments.push(ByteArgument {
+                argument_type: ByteArgumentType::Register(
+                    name.expect("Tried to parse unknown register name"),
+                ),
+                byte: arg_format1.is_byte(),
+                address: arg_format1.is_ram_address(),
+            });
+            offset += 1;
+        } else {
+            if arg_format1.is_ram_address() {
+                let value = u16::from_le_bytes([
+                    bytes[index as usize + offset],
+                    bytes[index as usize + offset + 1],
+                ]);
+                arguments.push(ByteArgument {
+                    argument_type: ByteArgumentType::Immediate(value),
+                    byte: arg_format1.is_byte(),
+                    address: true,
+                });
+                offset += 2;
+            } else {
+                if arg_format1.is_byte() {
+                    let value = bytes[index as usize + offset] as u16;
+                    arguments.push(ByteArgument {
+                        argument_type: ByteArgumentType::Immediate(value),
+                        byte: true,
+                        address: false,
+                    });
+                    offset += 1;
+                } else {
+                    let value = u16::from_le_bytes([
+                        bytes[index as usize + offset],
+                        bytes[index as usize + offset + 1],
+                    ]);
+                    arguments.push(ByteArgument {
+                        argument_type: ByteArgumentType::Immediate(value),
+                        byte: false,
+                        address: false,
+                    });
+                    offset += 2;
+                }
+            }
+        }
+    }
+
+    if arg_format2.exists() {
+        if arg_format2.is_register() {
+            let name = RegisterName::from_repr(bytes[index as usize + offset]);
+            arguments.push(ByteArgument {
+                argument_type: ByteArgumentType::Register(
+                    name.expect("Tried to parse unknown register name"),
+                ),
+                byte: arg_format2.is_byte(),
+                address: arg_format2.is_ram_address(),
+            });
+            offset += 1;
+        } else {
+            if arg_format2.is_ram_address() {
+                let value = u16::from_le_bytes([
+                    bytes[index as usize + offset],
+                    bytes[index as usize + offset + 1],
+                ]);
+                arguments.push(ByteArgument {
+                    argument_type: ByteArgumentType::Immediate(value),
+                    byte: arg_format2.is_byte(),
+                    address: true,
+                });
+                offset += 2;
+            } else {
+                if arg_format2.is_byte() {
+                    let value = bytes[index as usize + offset] as u16;
+                    arguments.push(ByteArgument {
+                        argument_type: ByteArgumentType::Immediate(value),
+                        byte: true,
+                        address: false,
+                    });
+                    offset += 1;
+                } else {
+                    let value = u16::from_le_bytes([
+                        bytes[index as usize + offset],
+                        bytes[index as usize + offset + 1],
+                    ]);
+                    arguments.push(ByteArgument {
+                        argument_type: ByteArgumentType::Immediate(value),
+                        byte: false,
+                        address: false,
+                    });
+                    offset += 2;
+                }
+            }
+        }
+    }
+
+    Ok(ByteInstruction {
+        instruction_type,
+        arguments,
+    })
 }
 
 #[wasm_bindgen]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct BinaryTokenMapping {
     start: u16,
     end: u16,
@@ -1421,9 +1812,36 @@ pub struct BinaryTokenMapping {
 #[wasm_bindgen]
 #[derive(Debug)]
 pub struct ProgramBinary {
-    start_byte: u16,
     binary: [u8; 0x1000],
     binary_token_map: Vec<BinaryTokenMapping>,
+}
+
+impl ProgramBinary {
+    pub fn new(binary: [u8; 0x1000], binary_token_map: Vec<BinaryTokenMapping>) -> ProgramBinary {
+        ProgramBinary {
+            binary,
+            binary_token_map,
+        }
+    }
+
+    pub fn get_binary(&self) -> &[u8; 0x1000] {
+        &self.binary
+    }
+}
+
+#[wasm_bindgen]
+impl ProgramBinary {
+    pub fn get_binary_token_map(&self) -> Vec<BinaryTokenMapping> {
+        self.binary_token_map.to_vec()
+    }
+
+    pub fn get_start_byte(&self) -> u16 {
+        u16::from_le_bytes([self.binary[0], self.binary[1]])
+    }
+
+    pub fn get_binary_blob(&self) -> Box<[u8]> {
+        Box::new(self.binary)
+    }
 }
 
 impl ProgramBinary {
@@ -1438,26 +1856,26 @@ impl ProgramBinary {
 
         let mut label_replacement_queue: Vec<(String, u16)> = Vec::new();
 
-        // skip first 4 bytes to fit i/o bytes
-        let mut layout_pos: u16 = 4;
-        for (layout_object, token_index) in linked_program_map.layout_objects {
+        let mut layout_pos: u16 = 6;
+        for i in (0..linked_program_map.layout_objects.len()) {
+            let (layout_object, token_index) = &linked_program_map.layout_objects[i];
             binary_token_map.push(BinaryTokenMapping {
                 start: layout_pos,
                 end: layout_pos + layout_object.size,
-                token: tokens[token_index].clone(),
+                token: tokens[*token_index].clone(),
             });
-            for i in &linked_program_map.labels {
-                let label_index = match i.1 {
+            for label in &linked_program_map.labels {
+                let label_index = match label.1 {
                     LabelAttachment::Instruction(_) => {
                         continue;
                     }
                     LabelAttachment::LayoutObject(result) => result,
                 };
-                if token_index == *label_index {
-                    label_map.insert(i.0.clone(), layout_pos);
+                if i == *label_index {
+                    label_map.insert(label.0.clone(), layout_pos);
                 }
             }
-            let defaults = layout_object.defaults;
+            let defaults = &layout_object.defaults;
             for i in (0..layout_object.size as usize) {
                 if i < defaults.len() {
                     binary[i + layout_pos as usize] = defaults[i];
@@ -1468,29 +1886,31 @@ impl ProgramBinary {
             layout_pos += layout_object.size;
         }
 
-        for (instruction, token_index) in linked_program_map.instructions {
+        for i in (0..linked_program_map.instructions.len()) {
+            let (instruction, token_index) = &linked_program_map.instructions[i];
             binary_token_map.push(BinaryTokenMapping {
                 start: layout_pos,
                 end: layout_pos + instruction.arguments.len() as u16 + 1,
-                token: tokens[token_index].clone(),
+                token: tokens[*token_index].clone(),
             });
-            for i in &linked_program_map.labels {
-                let label_index = match i.1 {
+            for label in &linked_program_map.labels {
+                let label_index = match label.1 {
                     LabelAttachment::LayoutObject(_) => {
                         continue;
                     }
                     LabelAttachment::Instruction(result) => result,
                 };
-                if token_index == *label_index {
-                    label_map.insert(i.0.clone(), layout_pos);
+                if i == *label_index {
+                    label_map.insert(label.0.clone(), layout_pos);
                 }
             }
-            let (bytes, needed_labels) = match instruction_to_bytes(&instruction) {
-                Ok(result) => result,
-                Err(err) => {
-                    return Err(err);
-                }
-            };
+            let (bytes, needed_labels) =
+                match instruction_to_bytes(&instruction, tokens, *token_index) {
+                    Ok(result) => result,
+                    Err(err) => {
+                        return Err(err);
+                    }
+                };
             for i in (0..bytes.len()) {
                 binary[layout_pos as usize + i] = bytes[i];
             }
@@ -1501,9 +1921,10 @@ impl ProgramBinary {
         }
 
         for (label_name, byte_index) in label_replacement_queue {
-            let label = match linked_program_map.labels.get(&label_name) {
+            let label_address = match label_map.get(&label_name) {
                 Some(result) => result,
                 None => {
+                    util::log!("{label_name}");
                     return Err(ParseError {
                         error_type: ParseErrorType::UnknownLabel,
                         description: "Unknown label in use.",
@@ -1511,14 +1932,9 @@ impl ProgramBinary {
                     });
                 }
             };
-            let labelled_byte = match label {
-                LabelAttachment::Instruction(result) => result,
-                LabelAttachment::LayoutObject(result) => result,
-            };
-            let labelled_byte = *labelled_byte as u16;
-            let labelled_byte_slice = util::u16_to_bytes(&labelled_byte);
-            binary[byte_index as usize] = labelled_byte_slice[0];
-            binary[(byte_index + 1) as usize] = labelled_byte_slice[1];
+            let label_address_slice = label_address.to_le_bytes();
+            binary[byte_index as usize] = label_address_slice[0];
+            binary[(byte_index + 1) as usize] = label_address_slice[1];
         }
 
         let start_byte = label_map.get("start");
@@ -1532,9 +1948,11 @@ impl ProgramBinary {
                 });
             }
         };
+        let start_bytes: [u8; 2] = u16::to_le_bytes(start_byte);
+        binary[0] = start_bytes[0];
+        binary[1] = start_bytes[1];
 
         Ok(ProgramBinary {
-            start_byte,
             binary,
             binary_token_map,
         })
@@ -1544,14 +1962,8 @@ impl ProgramBinary {
 /*
  * PROGRAM BUILDING
  */
-#[wasm_bindgen]
-#[derive(Debug)]
-pub struct GonkBoxProgram {
-    program_binary: ProgramBinary,
-}
-
 #[wasm_bindgen(js_name = "buildGonkASMProgram")]
-pub fn build_gonkbox_program(tokens: Vec<GonkASMToken>) -> Result<GonkBoxProgram, ParseError> {
+pub fn build_gonkbox_program(tokens: Vec<GonkASMToken>) -> Result<ProgramBinary, ParseError> {
     let string = fmt::format(format_args!("Token list: {tokens:#?}"));
     util::log!("Token list: {tokens:#?}");
 
@@ -1597,7 +2009,7 @@ pub fn build_gonkbox_program(tokens: Vec<GonkASMToken>) -> Result<GonkBoxProgram
         }
     };
 
-    Ok(GonkBoxProgram { program_binary })
+    Ok(program_binary)
 }
 
 // #[cfg(test)]
