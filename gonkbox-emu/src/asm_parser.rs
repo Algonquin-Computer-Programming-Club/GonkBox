@@ -574,7 +574,6 @@ fn match_arguments<T>(
         }
 
         let arg_desc = argument_descriptors[argn];
-        util::log!("[{argn}]:{{{token:#?}, {arg_desc:#?}}}");
 
         match token.token_type {
             GonkASMTokenType::Register => {
@@ -874,7 +873,7 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
             },
             // define top of loop
             &TemplateGonkASMToken {
-                value: ".label",
+                value: "label",
                 token_type: GonkASMTokenType::Label
             },
             &TemplateGonkASMToken {
@@ -964,7 +963,7 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
             },
             // define endpoint
             &TemplateGonkASMToken {
-                value: ".label",
+                value: "label",
                 token_type: GonkASMTokenType::Label
             },
             &TemplateGonkASMToken {
@@ -979,7 +978,7 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
         result: &[
             // set top of loop
             &TemplateGonkASMToken {
-                value: ".label",
+                value: "label",
                 token_type: GonkASMTokenType::Label,
             },
             &TemplateGonkASMToken {
@@ -1924,7 +1923,6 @@ impl ProgramBinary {
             let label_address = match label_map.get(&label_name) {
                 Some(result) => result,
                 None => {
-                    util::log!("{label_name}");
                     return Err(ParseError {
                         error_type: ParseErrorType::UnknownLabel,
                         description: "Unknown label in use.",
@@ -1965,7 +1963,6 @@ impl ProgramBinary {
 #[wasm_bindgen(js_name = "buildGonkASMProgram")]
 pub fn build_gonkbox_program(tokens: Vec<GonkASMToken>) -> Result<ProgramBinary, ParseError> {
     let string = fmt::format(format_args!("Token list: {tokens:#?}"));
-    util::log!("Token list: {tokens:#?}");
 
     let tokens = match expand_macros(tokens) {
         Ok(result) => result,
@@ -1974,8 +1971,6 @@ pub fn build_gonkbox_program(tokens: Vec<GonkASMToken>) -> Result<ProgramBinary,
             return Err(err);
         }
     };
-
-    util::log!("Expanded token list: {tokens:#?}");
 
     // multi pass compilation:
     // step 1 - create instructions, layout objects, and loose identifiers
@@ -1987,8 +1982,6 @@ pub fn build_gonkbox_program(tokens: Vec<GonkASMToken>) -> Result<ProgramBinary,
         }
     };
 
-    util::log!("Program map: {program_map:#?}");
-
     // step 2 - harden identifiers with pointer to intended layout object or instruction
     let linked_program_map: LinkedProgramMap = match LinkedProgramMap::build(program_map, &tokens) {
         Ok(result) => result,
@@ -1997,8 +1990,6 @@ pub fn build_gonkbox_program(tokens: Vec<GonkASMToken>) -> Result<ProgramBinary,
             return Err(err);
         }
     };
-
-    util::log!("Linked program map: {linked_program_map:#?}");
 
     // step 3 - generate binary
     let program_binary = match ProgramBinary::build(linked_program_map, &tokens) {
@@ -2011,129 +2002,3 @@ pub fn build_gonkbox_program(tokens: Vec<GonkASMToken>) -> Result<ProgramBinary,
 
     Ok(program_binary)
 }
-
-// #[cfg(test)]
-// mod parser_tests {
-//     use super::*;
-//
-//     #[test]
-//     fn no_tokens_input() {
-//         let tokens = vec![];
-//         let program = build_gonkbox_program(tokens);
-//         assert!(matches!(program, Ok(_)), "{program:#?}");
-//     }
-//
-//     #[test]
-//     fn single_instruction() {
-//         let tokens = vec![
-//             GonkASMToken::test_new(String::from("move"), GonkASMTokenType::Instruction),
-//             GonkASMToken::test_new(String::from("charlie"), GonkASMTokenType::Register),
-//             GonkASMToken::test_new(String::from("bill"), GonkASMTokenType::Register),
-//         ];
-//         let program = build_gonkbox_program(tokens);
-//         assert!(matches!(program, Ok(_)), "{program:#?}");
-//     }
-//
-//     #[test]
-//     fn multi_instruction() {
-//         let tokens = vec![
-//             // command 1
-//             // label start
-//             GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
-//             GonkASMToken::test_new(String::from("start"), GonkASMTokenType::Identifier),
-//             // instruction 1
-//             // insert 4 into bill
-//             GonkASMToken::test_new(String::from("move"), GonkASMTokenType::Instruction),
-//             GonkASMToken::test_new(String::from("4"), GonkASMTokenType::ImmediateLiteral),
-//             GonkASMToken::test_new(String::from("bill"), GonkASMTokenType::Register),
-//             // instruction 2
-//             // insert 5 into charlie
-//             GonkASMToken::test_new(String::from("move"), GonkASMTokenType::Instruction),
-//             GonkASMToken::test_new(String::from("5"), GonkASMTokenType::ImmediateLiteral),
-//             GonkASMToken::test_new(String::from("charlie"), GonkASMTokenType::Register),
-//             // instruction 3
-//             // compare bill and charlie
-//             GonkASMToken::test_new(String::from("comp"), GonkASMTokenType::Instruction),
-//             GonkASMToken::test_new(String::from("bill"), GonkASMTokenType::Register),
-//             GonkASMToken::test_new(String::from("charlie"), GonkASMTokenType::Register),
-//             // print bill
-//             GonkASMToken::test_new(String::from("$PRINT"), GonkASMTokenType::Macro),
-//             GonkASMToken::test_new(String::from("bill"), GonkASMTokenType::Register),
-//         ];
-//         let program = build_gonkbox_program(tokens);
-//         assert!(matches!(program, Ok(_)), "{program:#?}");
-//     }
-//
-//     #[test]
-//     fn single_command() {
-//         let tokens = vec![
-//             GonkASMToken::test_new(String::from("istr"), GonkASMTokenType::Command),
-//             GonkASMToken::test_new(
-//                 String::from("\"Hello, world!\""),
-//                 GonkASMTokenType::StringLiteral,
-//             ),
-//         ];
-//         let program = build_gonkbox_program(tokens);
-//         assert!(matches!(program, Ok(_)), "{program:#?}");
-//     }
-//
-//     #[test]
-//     fn multi_label() {
-//         let tokens = vec![
-//             GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
-//             GonkASMToken::test_new(String::from("first"), GonkASMTokenType::Identifier),
-//             GonkASMToken::test_new(String::from("stop"), GonkASMTokenType::Instruction),
-//             GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
-//             GonkASMToken::test_new(String::from("second"), GonkASMTokenType::Identifier),
-//             GonkASMToken::test_new(String::from("stop"), GonkASMTokenType::Instruction),
-//         ];
-//         let program = build_gonkbox_program(tokens);
-//         assert!(matches!(program, Ok(_)), "{program:#?}");
-//     }
-//
-//     #[test]
-//     fn reused_label() {
-//         let tokens = vec![
-//             GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
-//             GonkASMToken::test_new(String::from("test"), GonkASMTokenType::Identifier),
-//             GonkASMToken::test_new(String::from("stop"), GonkASMTokenType::Instruction),
-//             GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
-//             GonkASMToken::test_new(String::from("test"), GonkASMTokenType::Identifier),
-//             GonkASMToken::test_new(String::from("stop"), GonkASMTokenType::Instruction),
-//         ];
-//         let program = build_gonkbox_program(tokens);
-//         assert!(
-//             matches!(&program, Err(err) if matches!(err.error_type, ParseErrorType::ReusedLabel)),
-//             "{program:#?}"
-//         );
-//     }
-//
-//     #[test]
-//     fn detached_label() {
-//         let tokens = vec![
-//             GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
-//             GonkASMToken::test_new(String::from("test"), GonkASMTokenType::Identifier),
-//         ];
-//         let program = build_gonkbox_program(tokens);
-//         assert!(matches!(&program, Ok(_)), "{program:#?}");
-//     }
-//
-//     #[test]
-//     fn print_macro() {
-//         let tokens = vec![
-//             GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
-//             GonkASMToken::test_new(String::from("msg"), GonkASMTokenType::Identifier),
-//             GonkASMToken::test_new(String::from("istr"), GonkASMTokenType::Command),
-//             GonkASMToken::test_new(
-//                 String::from("\"Hello, world!\""),
-//                 GonkASMTokenType::StringLiteral,
-//             ),
-//             GonkASMToken::test_new(String::from(".label"), GonkASMTokenType::Label),
-//             GonkASMToken::test_new(String::from("start"), GonkASMTokenType::Identifier),
-//             GonkASMToken::test_new(String::from("$PRINT"), GonkASMTokenType::Macro),
-//             GonkASMToken::test_new(String::from("msg"), GonkASMTokenType::Identifier),
-//         ];
-//         let program = build_gonkbox_program(tokens);
-//         assert!(matches!(&program, Ok(_)), "{program:#?}");
-//     }
-// }

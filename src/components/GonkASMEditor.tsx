@@ -16,24 +16,24 @@ function GonkASMEditor() {
 
 	const modelPath = "inmemory://model/GonkASMEditor";
 
-	const code = [
-		".label msg				; the strings name is msg when we're coding",
-		"istr \"hello world!\\n\"	; store a string somewhere with this value",
-		"",
-		".label start			; program start",
-		"move 1 bill				; bill = 1",
-		"move 2 charlie			; charlie = 2",
-		"add bill charlie		; charlie = charlie+bill = 3",
-		"",
-		"comp bill charlie		; check if bill is <, >, =, or != to charlie",
-		"move print microwave	; set our jump address to the instruction at print",
-		"jumpne					; jump to microwave if bill != charlie",
-		"stop					; stop is skipped by jumpne",
-		"",
-		".label print			; new section of code to jump to",
-		"$PRINT msg				; macro for printing (see I/O)",
-		"stop					; programs must always end with stop",
-	].join('\n');
+	const code = String.raw`; defaultProgram.gonkASM
+label msg				; refer to the next element as 'msg' in code
+istr "hello world!\n"	; store a string in the binary
+
+label start				; first instruction to run
+move 1 bill				; bill = 1
+move 2 charlie			; charlie = 2
+add bill charlie 		; charlie += bill (charlie = 3)
+
+comp bill charlie		; store bill in relation to charlie
+move print microwave	; set our jump address to the print section
+jumpne					; jump to microwave if bill != charlie
+stop
+
+label print
+$PRINT msg				; print the string at the address
+stop					; programs must always end with stop
+`;
 
 	let [guide, setGuide] = useState(false);
 

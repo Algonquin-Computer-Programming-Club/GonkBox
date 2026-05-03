@@ -9,13 +9,11 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 	],
 
 	instructions: [
-		'move', 'moveb',
+		'move',
 		'add', 'sub', 'inc', 'dec', 'flip', 'comp',
 		'jump', 'jumpe', 'jumpne', 'jumpl', 'jumpg',
 		'stop'
 	],
-
-	separator: /,/,
 
 	registers: [
 		'bill', 'charlie', 'tim',
@@ -37,13 +35,13 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 
 	identifier: /[a-zA-Z_]+/,
 
-	label: /\.label/,
+	label: ['label'],
 
 	macro: /\$([A-Z_]+)/,
 
 	escapes: /\\(?:[nt\\"])/,
 
-	ignoreCase: true,
+	ignoreCase: false,
 
 	tokenizer: {
 		root: [
@@ -53,18 +51,13 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 					'@commands': 'command',
 					'@instructions': 'instruction',
 					'@registers': 'register',
+					'@label': 'label',
 					'@default': 'identifier'
 				}
 			}],
 
 			// whitespace
 			{ include: '@whitespace' },
-
-			// labels
-			[/(^@label)(\s+)(@identifier)/, ['label', 'white', 'identifier']],
-
-			// argument separator
-			[/@separator/, 'separator'],
 
 			// numbers
 			[/@immediateHex/, 'immediate.hex'],
@@ -73,9 +66,9 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 			// macros
 			[/@macro/, 'macro'],
 
-			// ram address brackets
+			// ram address bracket
 			// eslint-disable-next-line
-			[/[\[\]]/, 'rambracket'],
+			[/\*/, 'rambracket'],
 
 			// strings
 			[/"([^"\\]|\\.)*$/, 'string.invalid'],

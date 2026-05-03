@@ -5,10 +5,11 @@ use wasm_bindgen::prelude::*;
 use web_sys::js_sys::ArrayBuffer;
 
 use crate::asm_parser::{
-    Argument, ByteArgument, ByteArgumentType, Instruction, InstructionType, ProgramBinary,
-    RegisterName, bytes_to_instruction,
+    Argument, ByteArgument, ByteArgumentType, Instruction, InstructionType, ParseError,
+    ProgramBinary, RegisterName, build_gonkbox_program, bytes_to_instruction,
 };
 
+use crate::tokenizer::Tokenizer;
 use crate::util;
 
 #[wasm_bindgen]
@@ -492,46 +493,50 @@ impl GonkBoxEmu {
 
 #[test]
 fn test() {
-    // let source = r#"
-    // .label msg
-    // istr "hello world!\n"
-    //
-    // .label start
-    // move 1 bill
-    // move 2 charlie
-    // add bill charlie
-    //
-    // comp bill charlie
-    // move print microwave
-    // jumpne
-    // stop
-    //
-    // .label print
-    // $PRINT msg
-    // stop
-    // "#;
+    let source_code = r#"
+    label msg               ; comment
+    istr "hello world!\n"   ; comment
 
-    let src = include_bytes!("binary_tests/program.gonk");
-    let mut binary: [u8; 0x1000] = [0; 0x1000];
+    label start             ; comment
+    move 1 bill             ; comment
+    move 2 charlie          ; comment
+    add bill charlie        ; comment
 
-    {
-        let (binary_left, binary_right) = binary.split_at_mut(src.len());
-        binary_left.clone_from_slice(src);
-    }
+    comp bill charlie       ; comment
+    move print microwave    ; comment
+    jumpne                  ; comment
+    stop                    ; comment
 
-    let program_binary = ProgramBinary::new(binary, Vec::new());
+    label print             ; comment
+    $PRINT msg              ; comment
+    stop                    ; comment
+    "#;
+
+    let mut tokenizer = Tokenizer::new(source_code.into());
+    let tokens = match tokenizer.build() {
+        Ok(result) => result,
+        Err(err) => {
+            for error in err {
+                util::log!("Error [{}]: {}", error.get_line(), error.get_error());
+            }
+            panic!("Tokenizer failed.");
+        }
+    };
+
+    let program_binary = match build_gonkbox_program(tokens) {
+        Ok(result) => result,
+        Err(err) => {
+            util::log!("Error {err:#?}");
+            panic!("Parse failed.");
+        }
+    };
 
     let mut emu = GonkBoxEmu::new();
     emu.upload_program(&program_binary);
 
-    emu.fmt_memory();
-
     while (emu.is_executing()) {
-        // util::log!("{}", emu.get_register_text());
         let result = emu.step();
         match result {
-            // Ok(Some(x)) => util::log!("{x}"),
-            // Ok(None) => util::log!("no result"),
             Err(err) => {
                 util::log!("{err:#?}");
                 panic!("{err:#?}");
