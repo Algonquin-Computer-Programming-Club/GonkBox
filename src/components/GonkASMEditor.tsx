@@ -1,6 +1,6 @@
 import Editor, { Monaco } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GonkASMCompletionItemProvider } from '../language/GonkASMCompletionItemProvider';
 import { GonkASMThemeData } from '../language/GonkASMThemeData';
 import { GonkASMTokenProvider } from '../language/GonkASMTokenProvider';
@@ -109,6 +109,18 @@ stop					; programs must always end with stop
 		monacoRef.current = monaco;
 	}
 
+	const handleSizeChange = () => {
+		if (editorRef.current) {
+			console.log("hello");
+			editorRef.current.layout({} as editor.IDimension);
+		}
+	};
+
+	useEffect(() => {
+		window.addEventListener("resize", handleSizeChange);
+		return () => window.removeEventListener("resize", handleSizeChange);
+	}, []);
+
 	return <>
 		<div className="GonkASMEditor">
 			<div id="EditorPane">
@@ -130,7 +142,8 @@ stop					; programs must always end with stop
 						options={{
 							minimap: {
 								enabled: false
-							}
+							},
+							automaticLayout: true
 						}}
 					/>
 				</div>}
@@ -141,7 +154,7 @@ stop					; programs must always end with stop
 			</div>
 		</div>
 		<div className="Footer">
-			<span>Hello</span>
+			<span>GonkBox: You Dug Your Grave, Now Lie In It</span>
 		</div>
 	</>;
 };

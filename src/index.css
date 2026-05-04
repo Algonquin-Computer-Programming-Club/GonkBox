@@ -38,7 +38,9 @@ code {
 .GonkASMGuide {
 	grid-column: 1;
 
-	color: black;
+	color: #fbf1c7;
+	background-color: #1d2021;
+
 	overflow-y: scroll;
 	min-width: 0;
 	min-height: 0;
@@ -88,7 +90,7 @@ code {
 button {
 	font-family: monospace;
 	display: inline-block;
-	background-color: #282828;
+	background-color: inherit;
 	color: #fabd2f;
 	border: none;
 	margin: 0;
@@ -97,6 +99,59 @@ button {
 
 button:hover {
 	color: #d79921;
+}
+
+.GonkBoxStateView {
+	height: calc(100vh - 4rem);
+	background-color: #1d2021;
+	border-left: 2px solid #282828;
+	box-sizing: border-box;
+	color: #fbf1c7;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+}
+
+.GonkBoxStateView p {
+	margin-top: 0px;
+	color: #ebdbb2;
+}
+
+.HexViewerCanvas {
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
+	border: 2px solid #282828;
+}
+
+.GonkBoxConsole {
+	width: 100%;
+	height: 100%;
+	background-color: #1d2021;
+	color: #fbf1c7;
+	border: 2px solid #282828;
+	box-sizing: border-box;
+	padding: 0.2rem;
+	outline: none;
+	resize: none;
+}
+
+.GonkBoxConsole:focus {
+	border: 2px solid #32302f;
+}
+
+.Readout {
+	font-family: monospace;
+	display: inline-block;
+	color: #fabd2f;
+	border: none;
+	margin: 0;
+}
+
+.Register {
+	font-family: monospace;
+	color: #fabd2f;
+	font-size: 12pt;
 }
 
 .GonkASMEditorHeader {
@@ -117,4 +172,43 @@ button:hover {
 	display: grid;
 	grid-template-columns: 1fr;
 	grid-template-rows: 2rem calc(100% - 4rem);
+}
+
+.Slider {
+  -webkit-appearance: none;
+  width: 16em;
+  background: transparent;
+  cursor: pointer;
+}
+
+.Slider::-webkit-slider-runnable-track {
+  height: 8px;
+  background: #3c3836;
+  border-radius: 0px;
+  border: 2px solid #1d2021;
+}
+
+.Slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  background: #fabd2f;
+  border-radius: 0px;
+  border: 2px solid #fe8019;
+  margin-top: -6px;
+}
+
+.Slider::-moz-range-track {
+  height: 8px;
+  background: #3c3836;
+  border-radius: 0px;
+  border: 2px solid #1d2021;
+}
+
+.Slider::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  background: #fabd2f;
+  border-radius: 0px;
+  border: 2px solid #fe8019;
 }

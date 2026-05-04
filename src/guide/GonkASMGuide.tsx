@@ -19,16 +19,11 @@ function GonkASMGuide() {
 				setIsLoaded(true);
 			});
 	});
-	if (!isLoaded) {
-		return (
-			<p>Guide not loaded, please wait.</p>
-		);
-	}
-	return (
+	return <>
 		<div className="GonkASMGuide">
-			<div dangerouslySetInnerHTML={{ __html: markdownHtml }}></div>
-		</div >
-	);
+			{isLoaded && <div dangerouslySetInnerHTML={{ __html: markdownHtml }}></div>}
+		</div>
+	</>;
 }
 
 export default GonkASMGuide;
