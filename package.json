@@ -1,8 +1,8 @@
 {
-  "name": "gonkbox",
+  "name": "GonkBox",
   "version": "0.1.0",
   "private": true,
-  "homepage": "/gonkbox",
+  "homepage": "/GonkBox",
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@testing-library/dom": "^10.4.1",
