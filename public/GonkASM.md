@@ -105,10 +105,10 @@ Commands for declaring strings:
 ### Labels
 Labels are ways to 'name' a part of the program. By writing a label before an
 instruction or a command, you can refer to it later by its name. The syntax
-for writing a label is `.label` `name`. Labels must not be declared more than once,
+for writing a label is `label` `name`. Labels must not be declared more than once,
 as that would create ambiguity on which is being referred to.
 
-One label is reserved and must be included in a program: `start`. Add `.label
+One label is reserved and must be included in a program: `start`. Add `label
 start` before an instruction to set it as the start of the program.
 
 ### Immediate and Literal Values
@@ -128,11 +128,11 @@ and are displayed differently in the editor.
 
 ## Example Program
 ```
-.label string
+label string
 istr "hello world\n"
 
 ; program start
-.label start
+label start
 ; set bill and charlie to 4 and 5 respectively
 move 4 bill
 move 5 charlie
@@ -151,7 +151,7 @@ jumpne
 ; otherwise stop prematurely
 stop
 
-.label print
+label print
 ; This is a macro, a built-in pseudo-instruction to hide some
 ; special functionality.
 ; This one writes the string at the given address to the output window.

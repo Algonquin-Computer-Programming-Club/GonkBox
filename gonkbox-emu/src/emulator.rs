@@ -255,6 +255,7 @@ impl GonkBoxEmu {
             }
             ByteArgumentType::Immediate(value) => {
                 if !dest.is_address() {
+                    util::log!("{dest:#?}");
                     panic!("Fed immediate as destination to put_value.");
                 }
                 self.put_value_memory(src, *value, dest.is_byte());
@@ -491,65 +492,126 @@ impl GonkBoxEmu {
     }
 }
 
-#[test]
-fn test() {
-    let source_code = r#"
-    label msg               ; comment
-    istr "hello world!\n"   ; comment
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    label start             ; comment
-    move 1 bill             ; comment
-    move 2 charlie          ; comment
-    add bill charlie        ; comment
+    #[test]
+    fn write_test() {
+        let source_code = r#"
+        label msg               ; comment
+        istr "hello world!\n"   ; comment
 
-    comp bill charlie       ; comment
-    move print microwave    ; comment
-    jumpne                  ; comment
-    stop                    ; comment
+        label start             ; comment
+        move 1 bill             ; comment
+        move 2 charlie          ; comment
+        add bill charlie        ; comment
 
-    label print             ; comment
-    $PRINT msg              ; comment
-    stop                    ; comment
-    "#;
+        comp bill charlie       ; comment
+        move print microwave    ; comment
+        jumpne                  ; comment
+        stop                    ; comment
 
-    let mut tokenizer = Tokenizer::new(source_code.into());
-    let tokens = match tokenizer.build() {
-        Ok(result) => result,
-        Err(err) => {
-            for error in err {
-                util::log!("Error [{}]: {}", error.get_line(), error.get_error());
-            }
-            panic!("Tokenizer failed.");
-        }
-    };
+        label print             ; comment
+        $PRINT msg              ; comment
+        stop                    ; comment
+        "#;
 
-    let program_binary = match build_gonkbox_program(tokens) {
-        Ok(result) => result,
-        Err(err) => {
-            util::log!("Error {err:#?}");
-            panic!("Parse failed.");
-        }
-    };
-
-    let mut emu = GonkBoxEmu::new();
-    emu.upload_program(&program_binary);
-
-    while (emu.is_executing()) {
-        let result = emu.step();
-        match result {
+        let mut tokenizer = Tokenizer::new(source_code.into());
+        let tokens = match tokenizer.build() {
+            Ok(result) => result,
             Err(err) => {
-                util::log!("{err:#?}");
-                panic!("{err:#?}");
+                for error in err {
+                    util::log!("Error [{}]: {}", error.get_line(), error.get_error());
+                }
+                panic!("Tokenizer failed.");
             }
-            _ => {}
+        };
+
+        let program_binary = match build_gonkbox_program(tokens) {
+            Ok(result) => result,
+            Err(err) => {
+                util::log!("Error {err:#?}");
+                panic!("Parse failed.");
+            }
+        };
+
+        let mut emu = GonkBoxEmu::new();
+        emu.upload_program(&program_binary);
+
+        while (emu.is_executing()) {
+            let result = emu.step();
+            match result {
+                Err(err) => {
+                    util::log!("{err:#?}");
+                    panic!("{err:#?}");
+                }
+                _ => {}
+            }
+            let output = emu.try_read();
+            match output {
+                Some(b) => {
+                    let c = b as char;
+                    print!("{c}");
+                }
+                None => {}
+            }
         }
-        let output = emu.try_read();
-        match output {
-            Some(b) => {
-                let c = b as char;
-                print!("{c}");
+    }
+
+    #[test]
+    fn read_test() {
+        let source_code = r#"
+        label read_byte
+        dbytes 2
+
+        label start	
+        $READ bill
+        move bill_h *read_byte
+        $PRINT read_byte
+        stop
+        "#;
+
+        let mut tokenizer = Tokenizer::new(source_code.into());
+        let tokens = match tokenizer.build() {
+            Ok(result) => result,
+            Err(err) => {
+                for error in err {
+                    util::log!("Error [{}]: {}", error.get_line(), error.get_error());
+                }
+                panic!("Tokenizer failed.");
             }
-            None => {}
+        };
+
+        let program_binary = match build_gonkbox_program(tokens) {
+            Ok(result) => result,
+            Err(err) => {
+                util::log!("Error {err:#?}");
+                panic!("Parse failed.");
+            }
+        };
+
+        let mut emu = GonkBoxEmu::new();
+        emu.upload_program(&program_binary);
+
+        while (emu.is_executing()) {
+            let result = emu.step();
+            match result {
+                Err(err) => {
+                    util::log!("{err:#?}");
+                    panic!("{err:#?}");
+                }
+                _ => {}
+            }
+            let output = emu.try_read();
+            match output {
+                Some(b) => {
+                    let c = b as char;
+                    print!("{c}");
+                }
+                None => {}
+            }
+            emu.try_write('y' as u8);
         }
     }
 }

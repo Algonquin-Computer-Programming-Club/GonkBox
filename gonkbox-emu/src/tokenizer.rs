@@ -110,7 +110,7 @@ impl Tokenizer {
         if self.at_end() {
             '\0'
         } else {
-            self.source.as_bytes()[self.cursor - 1].into()
+            self.source.as_bytes()[self.cursor].into()
         }
     }
 
@@ -119,7 +119,7 @@ impl Tokenizer {
     }
 
     fn get_current_string(&self) -> String {
-        self.source[self.start..self.cursor - 1].to_owned()
+        self.source[self.start..self.cursor].to_owned()
     }
 
     fn capture_string(&mut self) {

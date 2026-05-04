@@ -17,6 +17,7 @@ function GonkBox({ source }: GonkBoxInputs) {
 	let [microwave, setMicrowave] = useState(0);
 	let [canada, setCanada] = useState(0);
 	let [consoleOut, setConsoleOut] = useState("");
+	let [consoleIn, setConsoleIn] = useState("");
 
 	const step = useCallback(() => {
 		let executing = emulator.current.is_executing();
@@ -35,8 +36,14 @@ function GonkBox({ source }: GonkBoxInputs) {
 
 			let read = emulator.current.try_read();
 			if (read) {
-				setConsoleOut(c => c + String.fromCharCode(read));
+				let char = String.fromCharCode(read);
+				setConsoleOut(out => out + char);
 				console.log(read);
+			}
+			if (consoleIn.length > 0) {
+				if (emulator.current.try_write(consoleIn[0].charCodeAt(0))) {
+					setConsoleIn(c => c.substring(1));
+				}
 			}
 		} catch (err) {
 			if (err instanceof EmuError) {
@@ -46,7 +53,7 @@ function GonkBox({ source }: GonkBoxInputs) {
 				throw err;
 			}
 		}
-	}, []);
+	}, [consoleIn]);
 
 	function stepButton() {
 		if (!running) {
@@ -83,6 +90,18 @@ function GonkBox({ source }: GonkBoxInputs) {
 		}
 	}, [running, speed, step]);
 
+	const onConsoleInput = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		event.stopPropagation();
+		event.preventDefault();
+		if (event.key === "Enter") {
+			setConsoleOut(c => c + "\n");
+			setConsoleIn(c => c + "\n");
+		} else if (event.key.length === 1) {
+			setConsoleOut(c => c + event.key);
+			setConsoleIn(c => c + event.key);
+		}
+	};
+
 	return <div className="GonkBox">
 		<div id="GonkBoxTopbar" className="Topbar">
 			<button onClick={stepButton}>Step</button>
@@ -92,7 +111,7 @@ function GonkBox({ source }: GonkBoxInputs) {
 			<button onClick={() => setSpeed(100)}>100ms</button>
 			<button onClick={() => setSpeed(25)}>25ms</button>
 		</div>
-		<div id="GonkBoxState" className="StateView">
+		<div className="GonkBoxStateView">
 			<p>Executing: {executing.toString()}</p>
 			<table>
 				<thead>
@@ -128,10 +147,10 @@ function GonkBox({ source }: GonkBoxInputs) {
 					</tr>
 				</tbody>
 			</table>
-			<h2>Console Output</h2>
-			<pre>{consoleOut}</pre>
+			<h2>Console</h2>
+			<textarea className="GonkBoxConsole" onKeyDownCapture={onConsoleInput} rows={10} cols={50} value={consoleOut}></textarea>
 		</div>
-	</div>
+	</div >
 }
 
 export default GonkBox;

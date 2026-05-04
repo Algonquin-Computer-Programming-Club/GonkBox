@@ -19,7 +19,7 @@ use crate::util;
  *  TOKENS
  */
 #[wasm_bindgen]
-#[derive(AsRefStr, Clone, Copy, Debug)]
+#[derive(AsRefStr, Clone, Copy, Debug, PartialEq)]
 pub enum GonkASMTokenType {
     Command,
     Instruction,
@@ -690,7 +690,7 @@ fn match_arguments<T>(
                     });
                 }
 
-                if !in_rambracket && token.value.eq("*") {
+                if !in_rambracket {
                     in_rambracket = true;
                 } else {
                     return Err(ParseError {
@@ -976,6 +976,18 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
         placeholder: "V",
         placeholder_type: GonkASMTokenType::Register,
         result: &[
+            &TemplateGonkASMToken {
+                value: "move",
+                token_type: GonkASMTokenType::Instruction,
+            },
+            &TemplateGonkASMToken {
+                value: "0",
+                token_type: GonkASMTokenType::ImmediateLiteral,
+            },
+            &TemplateGonkASMToken {
+                value: "charlie",
+                token_type: GonkASMTokenType::Register,
+            },
             // set top of loop
             &TemplateGonkASMToken {
                 value: "label",
@@ -1079,6 +1091,80 @@ const MACRO_DEFINITIONS: phf::Map<&'static str, MacroDefinition> = phf_map! {
             },
         ],
     },
+    "$READ" => MacroDefinition {
+        placeholder: "V",
+        placeholder_type: GonkASMTokenType::Register,
+        result: &[
+            &TemplateGonkASMToken {
+                value: "move",
+                token_type: GonkASMTokenType::Instruction,
+            },
+            &TemplateGonkASMToken {
+                value: "0",
+                token_type: GonkASMTokenType::ImmediateLiteral,
+            },
+            &TemplateGonkASMToken {
+                value: "V",
+                token_type: GonkASMTokenType::Register,
+            },
+            // set top of loop
+            &TemplateGonkASMToken {
+                value: "label",
+                token_type: GonkASMTokenType::Label,
+            },
+            &TemplateGonkASMToken {
+                value: "__read_+T",
+                token_type: GonkASMTokenType::Identifier,
+            },
+            // put value at output mapping into charlie
+            &TemplateGonkASMToken {
+                value: "move",
+                token_type: GonkASMTokenType::Instruction,
+            },
+            &TemplateGonkASMToken {
+                value: "*",
+                token_type: GonkASMTokenType::RamBracket,
+            },
+            &TemplateGonkASMToken {
+                value: "4",
+                token_type: GonkASMTokenType::ImmediateLiteral,
+            },
+            &TemplateGonkASMToken {
+                value: "V",
+                token_type: GonkASMTokenType::Register,
+            },
+            // check if lower byte is 0
+            &TemplateGonkASMToken {
+                value: "comp",
+                token_type: GonkASMTokenType::Instruction,
+            },
+            &TemplateGonkASMToken {
+                value: "V_l",
+                token_type: GonkASMTokenType::Register,
+            },
+            &TemplateGonkASMToken {
+                value: "0",
+                token_type: GonkASMTokenType::ImmediateLiteral,
+            },
+            // jump if 0
+            &TemplateGonkASMToken {
+                value: "move",
+                token_type: GonkASMTokenType::Instruction,
+            },
+            &TemplateGonkASMToken {
+                value: "__read_+T",
+                token_type: GonkASMTokenType::Identifier,
+            },
+            &TemplateGonkASMToken {
+                value: "microwave",
+                token_type: GonkASMTokenType::Register,
+            },
+            &TemplateGonkASMToken {
+                value: "jumpe",
+                token_type: GonkASMTokenType::Instruction,
+            },
+        ],
+    }
 };
 
 fn expand_macro(tokens: &Vec<GonkASMToken>, index: usize) -> Result<Vec<GonkASMToken>, ParseError> {
@@ -1093,6 +1179,7 @@ fn expand_macro(tokens: &Vec<GonkASMToken>, index: usize) -> Result<Vec<GonkASMT
         }
     };
 
+    let arg_token = tokens[index + 1].clone();
     let mut new_tokens: Vec<GonkASMToken> = Vec::new();
     for template_token in macro_definition.result {
         let mut token = GonkASMToken {
@@ -1102,9 +1189,19 @@ fn expand_macro(tokens: &Vec<GonkASMToken>, index: usize) -> Result<Vec<GonkASMT
             range_start: tokens[index].range_start,
             range_end: tokens[index + 1].range_end,
         };
-        if template_token.value == macro_definition.placeholder {
-            token.value = tokens[index + 1].value.clone();
-            token.token_type = macro_definition.placeholder_type;
+        if template_token.value.contains(macro_definition.placeholder) {
+            if (token.token_type == template_token.token_type) {
+                token.value = template_token
+                    .value
+                    .replace(macro_definition.placeholder, &arg_token.value);
+                token.token_type = macro_definition.placeholder_type;
+            } else {
+                return Err(ParseError {
+                    error_type: ParseErrorType::BadTokenType,
+                    description: "Incorrect argument type passed to macro.",
+                    token: Some(arg_token),
+                });
+            }
         }
         token.value = token.value.replace("+T", &format!("TEMP_ON_{index}"));
         new_tokens.push(token);
@@ -1579,8 +1676,11 @@ pub fn instruction_to_bytes(
                 argument_bytes.push(0);
                 argument_bytes.push(0);
                 label_bytes.push((label.identifier.clone(), offset));
-                if src_pointer && byte {
-                    src_arg_format.set_byte();
+                if src_pointer {
+                    src_arg_format.set_ram_address();
+                    if byte {
+                        src_arg_format.set_byte();
+                    }
                 }
                 offset += 2;
             }
@@ -1623,8 +1723,11 @@ pub fn instruction_to_bytes(
                 argument_bytes.push(0);
                 argument_bytes.push(0);
                 label_bytes.push((label.identifier.clone(), offset));
-                if dest_pointer && byte {
-                    dest_arg_format.set_byte();
+                if dest_pointer {
+                    dest_arg_format.set_ram_address();
+                    if byte {
+                        dest_arg_format.set_byte();
+                    }
                 }
                 offset += 2;
             }
@@ -1805,7 +1908,7 @@ pub fn bytes_to_instruction(
 pub struct BinaryTokenMapping {
     start: u16,
     end: u16,
-    token: GonkASMToken,
+    tokens: Vec<GonkASMToken>,
 }
 
 #[wasm_bindgen]
@@ -1861,7 +1964,7 @@ impl ProgramBinary {
             binary_token_map.push(BinaryTokenMapping {
                 start: layout_pos,
                 end: layout_pos + layout_object.size,
-                token: tokens[*token_index].clone(),
+                tokens: vec![tokens[*token_index].clone()],
             });
             for label in &linked_program_map.labels {
                 let label_index = match label.1 {
@@ -1887,11 +1990,6 @@ impl ProgramBinary {
 
         for i in (0..linked_program_map.instructions.len()) {
             let (instruction, token_index) = &linked_program_map.instructions[i];
-            binary_token_map.push(BinaryTokenMapping {
-                start: layout_pos,
-                end: layout_pos + instruction.arguments.len() as u16 + 1,
-                token: tokens[*token_index].clone(),
-            });
             for label in &linked_program_map.labels {
                 let label_index = match label.1 {
                     LabelAttachment::LayoutObject(_) => {
@@ -1916,6 +2014,15 @@ impl ProgramBinary {
             for i in needed_labels {
                 label_replacement_queue.push((i.0, i.1 + layout_pos));
             }
+            let mut mapped_tokens = vec![tokens[*token_index].clone()];
+            for j in (0..instruction.arguments.len()) {
+                mapped_tokens.push(tokens[*token_index + j].clone());
+            }
+            binary_token_map.push(BinaryTokenMapping {
+                start: layout_pos,
+                end: layout_pos + bytes.len() as u16,
+                tokens: mapped_tokens,
+            });
             layout_pos += bytes.len() as u16;
         }
 
@@ -1926,7 +2033,14 @@ impl ProgramBinary {
                     return Err(ParseError {
                         error_type: ParseErrorType::UnknownLabel,
                         description: "Unknown label in use.",
-                        token: None,
+                        token: Some(
+                            binary_token_map
+                                .iter()
+                                .find(|x| x.tokens.iter().any(|y| y.value == label_name))
+                                .unwrap()
+                                .tokens[0]
+                                .clone(),
+                        ),
                     });
                 }
             };

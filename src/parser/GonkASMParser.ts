@@ -57,6 +57,8 @@ class GonkASMParser {
 						severity: MarkerSeverity.Error,
 					}]);
 				}
+			} else {
+				console.error(err);
 			}
 		}
 	}
