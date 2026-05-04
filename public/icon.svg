@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="px">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="512"
+       height="512"
+       id="page2"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#1d2021;fill-opacity:1;stroke:#282828;stroke-width:13.6801;stroke-dasharray:none;stroke-opacity:1"
+       id="rect3"
+       width="498.31985"
+       height="498.31985"
+       x="6.8400545"
+       y="6.8400545"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:533.333px;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#000000;stroke:#fbf1c7;stroke-width:12;stroke-dasharray:none;stroke-opacity:1"
+       x="173.33334"
+       y="409.875"
+       id="text1"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         x="173.33334"
+         y="409.875"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:533.333px;font-family:'CaskaydiaCove Nerd Font Mono';-inkscape-font-specification:'CaskaydiaCove Nerd Font Mono';fill:#fabd2f;fill-opacity:1;stroke:#fbf1c7;stroke-width:12;stroke-dasharray:none;stroke-opacity:1">G</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:426.667px;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#000000;stroke:#fbf1c7;stroke-width:12;stroke-dasharray:none;stroke-opacity:1"
+       x="368.06244"
+       y="471.99976"
+       id="text1-0"><tspan
+         sodipodi:role="line"
+         id="tspan1-6"
+         x="368.06244"
+         y="471.99976"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:426.667px;font-family:'CaskaydiaCove Nerd Font Mono';-inkscape-font-specification:'CaskaydiaCove Nerd Font Mono';fill:#fabd2f;fill-opacity:1;stroke:#fbf1c7;stroke-width:12;stroke-dasharray:none;stroke-opacity:1">B</tspan></text>
+  </g>
+</svg>
