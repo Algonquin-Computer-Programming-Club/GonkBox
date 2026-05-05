@@ -15,7 +15,7 @@ available to programmers with a certain 'mnemonic' (name)
 6. Labels: names given to blocks of data or specific instructions
 7. Immediates/Literals: values typed out in code
 
-## Syntax
+## Language
 ### Registers
 Registers can be accessed by writing their name. For ease of use, the first letter
 of a register's name can be used instead of its full name.
@@ -61,6 +61,35 @@ in ram is `*4`, and the value of the word charlie points to is `*charlie`.
 | `jumpl`  |                  | Jump only if `canada` has LESS set           |
 | `jumpg`  |                  | Jump only if `canada` has GREATER set        |
 | `stop`   |                  | Stop execution of the program                |
+
+### Input/Output
+The GonkBox can read and write to a console (bottom right of the editor). To do
+this, there are four special bytes near the start of memory, called the 'memory
+mapped I/O', starting at byte address 2. They are, in order:
+- output flag
+- output data
+- input flag
+- input data
+To write data to the console, wait for the output flag to be low (0), set the
+data byte to the character you want to write, and set the output flag to be high
+(>0). Once the editor has read the byte, it will set the flag back to low.
+
+Similarly, to read data from the console, wait for the input flag to be high and
+read the input byte, then set the input flag back to low so the console is aware
+that it can write another byte.
+
+For convenience sake, a $PRINT macro exists which will take an immediate or
+label as the first character in a string, and print it to the console following
+this process. Similarly, a $READ macro exists which will try to read a single
+byte from the input stream into a given register (*note; the macro implementation
+is flawed, and will only succeed if the given register is tim. Oops.*)
+
+Additionally, several 'debug' instructions have been added which do *not*
+adhere to the rules of the GonkBox, but are useful for writing code quickly. All
+of them take a single argument. They are:
+- `dlogn` `arg` - print the value of arg as a number
+- `dlogc` `arg` - print the value of arg as a character
+- `dlogs` `arg` - print the memory at the value of arg as a string
 
 ### Arguments in Instructions
 Several rules apply for what values can be used in these arguments.

@@ -8,6 +8,7 @@ type GonkBoxInputs = {
 function GonkBox({ source }: GonkBoxInputs) {
 	const emulator = useRef<GonkBoxEmu>(new GonkBoxEmu());
 	const canvasRef: Ref<HTMLCanvasElement> = createRef();
+	const consoleRef: Ref<HTMLTextAreaElement> = createRef();
 
 	let [dims, setDims] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
 	let [memory, setMemory] = useState<Uint8Array | null>(null);
@@ -119,6 +120,19 @@ function GonkBox({ source }: GonkBoxInputs) {
 		setRunning(!running);
 	}
 
+	function clearConsole() {
+		setConsoleOut("");
+		setConsoleIn("");
+	}
+
+	useEffect(() => {
+		if (!consoleRef.current) return;
+
+		consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+		consoleRef.current.selectionStart = consoleOut.length;
+		consoleRef.current.selectionEnd = consoleOut.length;
+	}, [consoleRef, consoleOut]);
+
 	useEffect(() => {
 		if (source) {
 			emulator.current.upload_program(source);
@@ -165,6 +179,11 @@ function GonkBox({ source }: GonkBoxInputs) {
 		}
 	};
 
+	const onConsoleFocus = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+		event.target.selectionStart = consoleOut.length;
+		event.target.selectionEnd = consoleOut.length;
+	};
+
 	const onInputSpeed = (event: React.InputEvent<HTMLInputElement>) => {
 		setSpeed((event.target as HTMLInputElement).valueAsNumber);
 	};
@@ -176,9 +195,12 @@ function GonkBox({ source }: GonkBoxInputs) {
 	return <div className="GonkBox">
 		<div id="GonkBoxTopbar" className="Topbar">
 			<button onClick={stepButton}>Step</button>
+			<span className="TopbarDivider">|</span>
 			<button onClick={toggleRunning}>{running ? "Stop" : "Run"}</button>
 			<input className="Slider" name="Step Length (ms)" type="range" defaultValue={500} min={10} max={500} step={10} onInput={onInputSpeed}></input>
 			<p className="Readout">{speed.toString(10)}ms</p>
+			<span className="TopbarDivider">|</span>
+			<button onClick={clearConsole}>Clear Console</button>
 		</div>
 		<div className="GonkBoxStateView">
 			<div id="Readouts">
@@ -219,7 +241,14 @@ function GonkBox({ source }: GonkBoxInputs) {
 				</table>
 			</div>
 			<canvas className="HexViewerCanvas" onWheelCapture={onCanvasWheel} ref={canvasRef}></canvas>
-			<textarea className="GonkBoxConsole" spellCheck="false" onKeyDownCapture={onConsoleInput} rows={10} value={consoleOut}></textarea>
+			<textarea
+				className="GonkBoxConsole"
+				spellCheck="false"
+				onFocus={onConsoleFocus}
+				onKeyDownCapture={onConsoleInput}
+				value={consoleOut}
+				ref={consoleRef}>
+			</textarea>
 		</div>
 	</div >
 }

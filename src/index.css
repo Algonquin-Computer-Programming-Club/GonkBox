@@ -148,6 +148,14 @@ button:hover {
 	margin: 0;
 }
 
+.TopbarDivider {
+	font-family: monospace;
+	display: inline-block;
+	color: #504945;
+	border: none;
+	margin: 0;
+}
+
 .Register {
 	font-family: monospace;
 	color: #fabd2f;

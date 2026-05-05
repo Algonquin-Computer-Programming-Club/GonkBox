@@ -12,7 +12,8 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 		'move',
 		'add', 'sub', 'mul', 'div', 'inc', 'dec', 'comp',
 		'jump', 'jumpe', 'jumpne', 'jumpl', 'jumpg',
-		'stop'
+		'stop',
+		'dlogn', 'dlogc', 'dlogs'
 	],
 
 	registers: [
@@ -74,7 +75,7 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 			[/"([^"\\]|\\.)*$/, 'string.invalid'],
 			[/"/, { token: 'string', bracket: '@open', next: '@string' }],
 
-			[/'[^\\']'/, 'character'],
+			[/'[^\\']'|'\\[\\n']'/, 'character'],
 		],
 
 		string: [

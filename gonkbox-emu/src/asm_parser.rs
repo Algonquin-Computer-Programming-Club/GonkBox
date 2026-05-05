@@ -251,6 +251,11 @@ pub enum InstructionType {
     JumpG,
 
     Stop,
+
+    // debug - should be obvious these aren't normally accessible on a bare-metal style machine
+    DebugLogNumber,
+    DebugLogCharacter,
+    DebugLogString,
 }
 
 const INSTRUCTION_TYPES: phf::Map<&'static str, Descriptor<InstructionType>> = phf_map! {
@@ -329,6 +334,19 @@ const INSTRUCTION_TYPES: phf::Map<&'static str, Descriptor<InstructionType>> = p
     "stop" => Descriptor {
         key_type: InstructionType::Stop,
         argument_descriptors: &[],
+    },
+
+    "dlogn" => Descriptor {
+        key_type: InstructionType::DebugLogNumber,
+        argument_descriptors: &[ARGDESC_GENERAL]
+    },
+    "dlogc" => Descriptor {
+        key_type: InstructionType::DebugLogCharacter,
+        argument_descriptors: &[ARGDESC_GENERAL]
+    },
+    "dlogs" => Descriptor {
+        key_type: InstructionType::DebugLogString,
+        argument_descriptors: &[ARGDESC_GENERAL]
     },
 };
 

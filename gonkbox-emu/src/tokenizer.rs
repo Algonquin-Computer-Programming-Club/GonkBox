@@ -83,6 +83,9 @@ impl Tokenizer {
                 ("jumpl".into(), GonkASMTokenType::Instruction),
                 ("jumpg".into(), GonkASMTokenType::Instruction),
                 ("stop".into(), GonkASMTokenType::Instruction),
+                ("dlogn".into(), GonkASMTokenType::Instruction),
+                ("dlogc".into(), GonkASMTokenType::Instruction),
+                ("dlogs".into(), GonkASMTokenType::Instruction),
                 ("dbyte".into(), GonkASMTokenType::Command),
                 ("dbytes".into(), GonkASMTokenType::Command),
                 ("ibyte".into(), GonkASMTokenType::Command),
@@ -143,9 +146,12 @@ impl Tokenizer {
     }
 
     fn capture_char(&mut self) {
+        if self.peek() == '\'' {
+            self.error(self.line, "Prematurely ended character.".into());
+        }
         self.advance();
         if self.peek() != '\'' {
-            self.error(self.line, "Prematurely ended character.".into());
+            self.error(self.line, "Badly sized character.".into());
         }
 
         self.advance();
@@ -157,6 +163,28 @@ impl Tokenizer {
             self.add_token_ex(GonkASMTokenType::ImmediateLiteral, num_string);
         } else {
             self.error(self.line, "Badly sized character.".into());
+        }
+    }
+
+    fn capture_escape_char(&mut self) {
+        self.advance();
+        if self.peek() != '\\' && self.peek() != 'n' && self.peek() != '\'' {
+            self.error(self.line, "Invalid escape character.".into());
+        }
+
+        self.advance();
+        self.advance();
+
+        let mut string = self.get_current_string();
+        if string.len() == 4 {
+            string = string.replace("\\\\", "\\");
+            string = string.replace("\\n", "\n");
+            string = string.replace("\\\'", "\'");
+            let byte = string.as_bytes()[1];
+            let num_string = byte.to_string();
+            self.add_token_ex(GonkASMTokenType::ImmediateLiteral, num_string);
+        } else {
+            self.error(self.line, "Badly sized escape character.".into());
         }
     }
 
@@ -205,7 +233,13 @@ impl Tokenizer {
             '\r' => {}
             '\n' => self.line += 1,
             '"' => self.capture_string(),
-            '\'' => self.capture_char(),
+            '\'' => {
+                if self.peek() == '\\' {
+                    self.capture_escape_char();
+                } else {
+                    self.capture_char();
+                }
+            }
             '$' => self.capture_macro(),
             _ => {
                 if c.is_digit(10) {

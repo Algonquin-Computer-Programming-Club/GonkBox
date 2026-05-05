@@ -1,0 +1,22 @@
+label msg istr "Fibonacci Numbers!\n"
+
+label start
+move msg bill
+dlogs bill
+
+move 0 bill
+move 1 charlie
+
+move loop microwave
+label loop
+move bill tim
+add charlie tim
+move charlie bill
+move tim charlie
+dlogn charlie
+move '\n' tim
+dlogc tim
+comp charlie 30000
+jumpl
+
+stop

@@ -91,6 +91,10 @@ pub struct GonkBoxEmu {
     paul: u16,
     microwave: u16,
     canada: CompFlags,
+
+    // debug instruction utils
+    debug_writing: bool,
+    debug_str: String,
 }
 
 #[wasm_bindgen]
@@ -106,6 +110,8 @@ impl GonkBoxEmu {
             paul: 0,
             microwave: 0,
             canada: CompFlags::empty(),
+            debug_writing: false,
+            debug_str: "".into(),
         }
     }
 
@@ -310,6 +316,18 @@ impl GonkBoxEmu {
             return Ok(None);
         }
 
+        if (self.debug_writing) {
+            if (self.memory[2] == 0 && self.debug_str.len() > 0) {
+                let character = self.debug_str.remove(0);
+                self.memory[2] = 1;
+                self.memory[3] = character as u8;
+            }
+            if (self.debug_str.len() == 0) {
+                self.debug_writing = false;
+            }
+            return Ok(None);
+        }
+
         let ip = self.paul;
         if (ip >= 0x1000) {
             return Err(EmuError {
@@ -463,6 +481,36 @@ impl GonkBoxEmu {
             }
             InstructionType::Stop => {
                 self.executing = false;
+            }
+            InstructionType::DebugLogNumber => {
+                let arg = &arguments[0];
+
+                let src = self.get_value(arg)?;
+                self.debug_writing = true;
+                self.debug_str = src.to_string();
+            }
+            InstructionType::DebugLogCharacter => {
+                let arg = &arguments[0];
+
+                let src = self.get_value(arg)?;
+                self.debug_writing = true;
+                self.debug_str = (src as u8 as char).into();
+            }
+            InstructionType::DebugLogString => {
+                let arg = &arguments[0];
+
+                let src = self.get_value(arg)?;
+                let next0 = match self.memory[src as usize..].iter().position(|x| *x == 0) {
+                    Some(x) => x as u16 + src,
+                    None => src,
+                };
+                let bytes = &self.memory[src as usize..next0 as usize];
+                let str = match String::from_utf8(bytes.to_vec()) {
+                    Ok(result) => result,
+                    Err(_) => "[Failed memory string!]".into(),
+                };
+                self.debug_writing = true;
+                self.debug_str = str;
             }
         }
 
@@ -657,6 +705,9 @@ mod tests {
         let source_code = r#"
         label start	
         move 'a' bill
+        dlogc bill
+        move '\n' bill
+        dlogc bill
         stop
         "#;
 

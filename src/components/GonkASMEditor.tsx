@@ -125,8 +125,11 @@ stop					; programs must always end with stop
 			<div id="EditorPane">
 				<div id="GonkBoxASMTopbar" className="Topbar">
 					<button id="CompileButton" onClick={compile}>Compile</button>
+					<span className="TopbarDivider">|</span>
 					<button id="SaveSourceButton" onClick={saveSource}>Save Source</button>
+					<span className="TopbarDivider">|</span>
 					<button id="SaveBinaryButton" onClick={saveBinary}>Save Binary</button>
+					<span className="TopbarDivider">|</span>
 					<button id="GuideButton" onClick={toggleGuide}>Guide</button>
 				</div>
 				{!guide && <div className="GonkASMEditorWindow">
