@@ -13,7 +13,7 @@ use crate::tokenizer::Tokenizer;
 use crate::util;
 
 #[wasm_bindgen]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum EmuErrorType {
     OutOfBoundsException,
     InstructionReadFailed,
@@ -24,6 +24,21 @@ pub enum EmuErrorType {
 pub struct EmuError {
     error_type: EmuErrorType,
     description: &'static str,
+}
+
+#[wasm_bindgen]
+impl EmuError {
+    pub fn get_error_type(&self) -> EmuErrorType {
+        self.error_type.clone()
+    }
+
+    pub fn get_description(&self) -> String {
+        self.description.to_owned()
+    }
+
+    pub fn format(&self) -> String {
+        format!("{:#?}: {:#?}", self.error_type, self.description)
+    }
 }
 
 struct CompFlags(u16);
@@ -163,32 +178,39 @@ impl GonkBoxEmu {
         }
     }
 
-    fn get_value_memory(&self, pos: u16, byte: bool) -> u16 {
-        u16::from_le_bytes([
-            self.memory[pos as usize],
-            if byte {
-                0
-            } else {
-                self.memory[pos as usize + 1]
-            },
-        ])
+    fn get_value_memory(&self, pos: u16, byte: bool) -> Result<u16, EmuError> {
+        if ((byte && pos > 0xfff) || (!byte && pos > 0xffe)) {
+            Err(EmuError {
+                error_type: EmuErrorType::OutOfBoundsException,
+                description: "Tried to access memory outside of the valid area.",
+            })
+        } else {
+            Ok(u16::from_le_bytes([
+                self.memory[pos as usize],
+                if byte {
+                    0
+                } else {
+                    self.memory[pos as usize + 1]
+                },
+            ]))
+        }
     }
 
-    fn get_value(&self, arg: &ByteArgument) -> u16 {
+    fn get_value(&self, arg: &ByteArgument) -> Result<u16, EmuError> {
         match arg.get_argument_type() {
             ByteArgumentType::Register(reg) => {
                 let value = self.get_register(reg);
                 if arg.is_address() {
                     self.get_value_memory(value, arg.is_byte())
                 } else {
-                    value
+                    Ok(value)
                 }
             }
             ByteArgumentType::Immediate(value) => {
                 if arg.is_address() {
                     self.get_value_memory(*value, arg.is_byte())
                 } else {
-                    *value
+                    Ok(*value)
                 }
             }
         }
@@ -279,6 +301,10 @@ impl GonkBoxEmu {
         size
     }
 
+    pub fn stop_executing(&mut self) {
+        self.executing = false;
+    }
+
     pub fn step(&mut self) -> Result<Option<String>, EmuError> {
         if (!self.executing) {
             return Ok(None);
@@ -310,57 +336,57 @@ impl GonkBoxEmu {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
+                let src = self.get_value(arg1)?;
                 self.put_value(src, arg2);
             }
             InstructionType::Add => {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
-                let dest = self.get_value(arg2);
-                self.put_value(dest + src, arg2);
+                let src = self.get_value(arg1)?;
+                let dest = self.get_value(arg2)?;
+                self.put_value(dest.wrapping_add(src), arg2);
             }
             InstructionType::Sub => {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
-                let dest = self.get_value(arg2);
-                self.put_value(dest - src, arg2);
+                let src = self.get_value(arg1)?;
+                let dest = self.get_value(arg2)?;
+                self.put_value(dest.wrapping_sub(src), arg2);
             }
             InstructionType::Mul => {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
-                let dest = self.get_value(arg2);
-                self.put_value(dest * src, arg2);
+                let src = self.get_value(arg1)?;
+                let dest = self.get_value(arg2)?;
+                self.put_value(dest.wrapping_mul(src), arg2);
             }
             InstructionType::Div => {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
-                let dest = self.get_value(arg2);
-                self.put_value(dest / src, arg2);
+                let src = self.get_value(arg1)?;
+                let dest = self.get_value(arg2)?;
+                self.put_value(dest.wrapping_div(src), arg2);
             }
             InstructionType::Inc => {
                 let arg = &arguments[0];
-                let value = self.get_value(arg) + 1;
+                let value = self.get_value(arg)?.wrapping_add(1);
                 self.put_value(value, arg);
             }
             InstructionType::Dec => {
                 let arg = &arguments[0];
-                let value = self.get_value(arg) - 1;
+                let value = self.get_value(arg)?.wrapping_sub(1);
                 self.put_value(value, arg);
             }
             InstructionType::Comp => {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
-                let dest = self.get_value(arg2);
+                let src = self.get_value(arg1)?;
+                let dest = self.get_value(arg2)?;
 
                 let mut result = CompFlags::empty();
                 if (src == dest) {
@@ -379,8 +405,8 @@ impl GonkBoxEmu {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
-                let dest = self.get_value(arg2);
+                let src = self.get_value(arg1)?;
+                let dest = self.get_value(arg2)?;
 
                 self.put_value(src | dest, arg2);
             }
@@ -388,8 +414,8 @@ impl GonkBoxEmu {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
-                let dest = self.get_value(arg2);
+                let src = self.get_value(arg1)?;
+                let dest = self.get_value(arg2)?;
 
                 self.put_value(src & dest, arg2);
             }
@@ -397,14 +423,14 @@ impl GonkBoxEmu {
                 let arg1 = &arguments[0];
                 let arg2 = &arguments[1];
 
-                let src = self.get_value(arg1);
-                let dest = self.get_value(arg2);
+                let src = self.get_value(arg1)?;
+                let dest = self.get_value(arg2)?;
 
                 self.put_value(!(src & dest), arg2);
             }
             InstructionType::Not => {
                 let arg = &arguments[0];
-                let src = self.get_value(arg);
+                let src = self.get_value(arg)?;
                 self.put_value(!src, arg);
             }
             InstructionType::Jump => {

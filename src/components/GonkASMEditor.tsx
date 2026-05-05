@@ -111,7 +111,6 @@ stop					; programs must always end with stop
 
 	const handleSizeChange = () => {
 		if (editorRef.current) {
-			console.log("hello");
 			editorRef.current.layout({} as editor.IDimension);
 		}
 	};

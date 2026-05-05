@@ -88,7 +88,6 @@ function GonkBox({ source }: GonkBoxInputs) {
 			if (read) {
 				let char = String.fromCharCode(read);
 				setConsoleOut(out => out + char);
-				console.log(read);
 			}
 			if (consoleIn.length > 0) {
 				if (emulator.current.try_write(consoleIn[0].charCodeAt(0))) {
@@ -97,10 +96,11 @@ function GonkBox({ source }: GonkBoxInputs) {
 			}
 		} catch (err) {
 			if (err instanceof EmuError) {
-				console.error(err);
+				emulator.current.stop_executing();
+				let safeErr = err as EmuError;
+				setConsoleOut(out => out + safeErr.format());
 			} else {
 				console.error(`Unexpected Error: ${err}`);
-				throw err;
 			}
 		}
 
