@@ -36,6 +36,7 @@ pub struct Tokenizer {
 
 #[wasm_bindgen]
 impl Tokenizer {
+    #[wasm_bindgen(constructor)]
     pub fn new(source: String) -> Tokenizer {
         Tokenizer {
             source,
@@ -140,6 +141,24 @@ impl Tokenizer {
         self.add_token(GonkASMTokenType::StringLiteral);
     }
 
+    fn capture_char(&mut self) {
+        self.advance();
+        if self.peek() != '\'' {
+            self.error(self.line, "Prematurely ended character.".into());
+        }
+
+        self.advance();
+
+        let string = self.get_current_string();
+        if string.len() == 3 {
+            let byte = string.as_bytes()[1];
+            let num_string = byte.to_string();
+            self.add_token_ex(GonkASMTokenType::ImmediateLiteral, num_string);
+        } else {
+            self.error(self.line, "Badly sized character.".into());
+        }
+    }
+
     fn capture_num(&mut self) {
         while self.peek().is_digit(10) {
             self.advance();
@@ -185,6 +204,7 @@ impl Tokenizer {
             '\r' => {}
             '\n' => self.line += 1,
             '"' => self.capture_string(),
+            '\'' => self.capture_char(),
             '$' => self.capture_macro(),
             _ => {
                 if c.is_digit(10) {
@@ -199,8 +219,12 @@ impl Tokenizer {
     }
 
     fn add_token(&mut self, token_type: GonkASMTokenType) {
+        self.add_token_ex(token_type, self.get_current_string());
+    }
+
+    fn add_token_ex(&mut self, token_type: GonkASMTokenType, value: String) {
         self.tokens.push(GonkASMToken::new(
-            self.get_current_string(),
+            value,
             token_type,
             self.line,
             self.start,

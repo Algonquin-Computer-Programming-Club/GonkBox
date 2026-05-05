@@ -73,6 +73,8 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 			// strings
 			[/"([^"\\]|\\.)*$/, 'string.invalid'],
 			[/"/, { token: 'string', bracket: '@open', next: '@string' }],
+
+			[/'[^\\']'/, 'character'],
 		],
 
 		string: [

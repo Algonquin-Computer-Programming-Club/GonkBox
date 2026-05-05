@@ -614,4 +614,55 @@ mod tests {
             emu.try_write('y' as u8);
         }
     }
+
+    #[test]
+    fn char_test() {
+        let source_code = r#"
+        label start	
+        move 'a' bill
+        stop
+        "#;
+
+        let mut tokenizer = Tokenizer::new(source_code.into());
+        let tokens = match tokenizer.build() {
+            Ok(result) => result,
+            Err(err) => {
+                for error in err {
+                    util::log!("Error [{}]: {}", error.get_line(), error.get_error());
+                }
+                panic!("Tokenizer failed.");
+            }
+        };
+
+        let program_binary = match build_gonkbox_program(tokens) {
+            Ok(result) => result,
+            Err(err) => {
+                util::log!("Error {err:#?}");
+                panic!("Parse failed.");
+            }
+        };
+
+        let mut emu = GonkBoxEmu::new();
+        emu.upload_program(&program_binary);
+
+        while (emu.is_executing()) {
+            let result = emu.step();
+            match result {
+                Err(err) => {
+                    util::log!("{err:#?}");
+                    panic!("{err:#?}");
+                }
+                _ => {}
+            }
+            let output = emu.try_read();
+            match output {
+                Some(b) => {
+                    let c = b as char;
+                    print!("{c}");
+                }
+                None => {}
+            }
+            emu.try_write('y' as u8);
+        }
+    }
 }

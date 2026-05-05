@@ -24,6 +24,8 @@ export const GonkASMThemeData: monaco.editor.IStandaloneThemeData = {
 		{ token: "string.escape", foreground: "fb4934" },
 		{ token: "string.invalid", foreground: "689d6a", fontStyle: "bold" },
 		{ token: "string.escape.invalid", foreground: "cc241d", fontStyle: "bold" },
+
+		{ token: "character", foreground: "b16286" },
 	],
 	colors: {
 		"editor.foreground": "#fbf1c7",

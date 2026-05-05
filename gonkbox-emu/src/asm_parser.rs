@@ -543,6 +543,7 @@ fn parse_string(input: &Vec<GonkASMToken>, start_i: usize) -> Result<(String, us
         None => String::from(""),
     };
     string = string.replace("\\n", "\n");
+    string = string.replace("\\\"", "\"");
     string = string.replace("\\\\", "\\");
     Ok((string, pos - start_i))
 }

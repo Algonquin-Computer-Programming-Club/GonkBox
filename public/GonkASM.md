@@ -126,35 +126,28 @@ and are displayed differently in the editor.
 - `\"` adds a quotation mark in the middle of a string
 - `\\` adds a non-escape backslash in a string
 
+Single characters can also be written, surrounded by single quotes `'` instead
+of double quotes. These will be interpreted as numbers according to their ASCII
+encoding, meaning they can be inserted in places where immediate values are
+accepted.
+
 ## Example Program
 ```
-label string
-istr "hello world\n"
+label msg               ; refer to the next element as 'msg' in code
+istr "hello world!\n"   ; store a string in the binary
 
-; program start
-label start
-; set bill and charlie to 4 and 5 respectively
-move 4 bill
-move 5 charlie
-; add bill and charlie, store in charlie (should be 9)
-add bill charlie
+label start	            ; first instruction to run
+move 1 bill             ; bill = 1
+move 2 charlie          ; charlie = 2
+add bill charlie        ; charlie += bill (charlie = 3)
 
-; set tim to 10
-move 10 tim
-; compare the values of tim and charlie
-comp tim charlie
-; set hello as the position to jump to
-move hello microwave
-
-; jump to hello if tim != charlie
-jumpne
-; otherwise stop prematurely
+comp bill charlie       ; store bill in relation to charlie
+move print microwave    ; set our jump address to the print section
+jumpne                  ; jump to microwave if bill != charlie
 stop
 
 label print
-; This is a macro, a built-in pseudo-instruction to hide some
-; special functionality.
-; This one writes the string at the given address to the output window.
-$PRINT string
+$PRINT msg              ; print the string at the address
+stop                    ; programs must always end with stop
 ```
 
