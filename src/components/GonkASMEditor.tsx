@@ -16,7 +16,8 @@ function GonkASMEditor() {
 
 	const modelPath = "inmemory://model/GonkASMEditor";
 
-	const code = String.raw`; defaultProgram.gonkASM
+	function getDefaultCode() {
+		const defaultCode = String.raw`; defaultProgram.gonkASM
 label msg				; refer to the next element as 'msg' in code
 istr "hello world!\n"	; store a string in the binary
 
@@ -34,6 +35,11 @@ label print
 $PRINT msg				; print the string at the address
 stop					; programs must always end with stop
 `;
+
+		let value = localStorage.getItem("defaultCode");
+		if (value) return value;
+		return defaultCode;
+	}
 
 	let [guide, setGuide] = useState(false);
 
@@ -88,6 +94,13 @@ stop					; programs must always end with stop
 		}
 	}
 
+	function loadSource() {
+		let input = document.getElementById("LoadSourceInput");
+		if (input instanceof HTMLInputElement) {
+			input.click();
+		}
+	}
+
 	function toggleGuide() {
 		if (editorRef.current)
 			editorRef.current.layout({} as editor.IDimension);
@@ -109,9 +122,27 @@ stop					; programs must always end with stop
 		monacoRef.current = monaco;
 	}
 
+	const onChangeEvent = (value: string | undefined, _ev: editor.IModelContentChangedEvent) => {
+		if (value) {
+			localStorage.setItem("defaultCode", value);
+		}
+	};
+
 	const handleSizeChange = () => {
 		if (editorRef.current) {
 			editorRef.current.layout({} as editor.IDimension);
+		}
+	};
+
+	const onLoadEvent = (event: React.InputEvent) => {
+		if (editorRef.current) {
+			let model = editorRef.current.getModel();
+			let input = event.target as HTMLInputElement;
+			if (input.files && input.files.length > 0) {
+				input.files[0].text().then((value) => {
+					model?.setValue(value);
+				});
+			}
 		}
 	};
 
@@ -130,17 +161,21 @@ stop					; programs must always end with stop
 					<span className="TopbarDivider">|</span>
 					<button id="SaveBinaryButton" onClick={saveBinary}>Save Binary</button>
 					<span className="TopbarDivider">|</span>
+					<button id="LoadSourceButton" onClick={loadSource}>Load Source</button>
+					<input id="LoadSourceInput" type="file" onInput={onLoadEvent} hidden={true} style={{ visibility: "hidden" }}></input>
+					<span className="TopbarDivider">|</span>
 					<button id="GuideButton" onClick={toggleGuide}>Guide</button>
 				</div>
 				{!guide && <div className="GonkASMEditorWindow">
 					<Editor
 						defaultLanguage="gonkASM"
-						defaultValue={code}
+						defaultValue={getDefaultCode()}
 						beforeMount={registerGonkASM}
 						onMount={handleEditorMount}
 						keepCurrentModel={true}
 						theme="gonkTheme"
 						path={modelPath}
+						onChange={onChangeEvent}
 						options={{
 							minimap: {
 								enabled: false
