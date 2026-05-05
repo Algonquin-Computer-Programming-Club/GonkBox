@@ -319,7 +319,7 @@ impl GonkBoxEmu {
 
                 let src = self.get_value(arg1);
                 let dest = self.get_value(arg2);
-                self.put_value(src + dest, arg2);
+                self.put_value(dest + src, arg2);
             }
             InstructionType::Sub => {
                 let arg1 = &arguments[0];
@@ -327,7 +327,23 @@ impl GonkBoxEmu {
 
                 let src = self.get_value(arg1);
                 let dest = self.get_value(arg2);
-                self.put_value(src - dest, arg2);
+                self.put_value(dest - src, arg2);
+            }
+            InstructionType::Mul => {
+                let arg1 = &arguments[0];
+                let arg2 = &arguments[1];
+
+                let src = self.get_value(arg1);
+                let dest = self.get_value(arg2);
+                self.put_value(dest * src, arg2);
+            }
+            InstructionType::Div => {
+                let arg1 = &arguments[0];
+                let arg2 = &arguments[1];
+
+                let src = self.get_value(arg1);
+                let dest = self.get_value(arg2);
+                self.put_value(dest / src, arg2);
             }
             InstructionType::Inc => {
                 let arg = &arguments[0];
@@ -337,11 +353,6 @@ impl GonkBoxEmu {
             InstructionType::Dec => {
                 let arg = &arguments[0];
                 let value = self.get_value(arg) - 1;
-                self.put_value(value, arg);
-            }
-            InstructionType::Flip => {
-                let arg = &arguments[0];
-                let value = -(self.get_value(arg) as i16) as u16;
                 self.put_value(value, arg);
             }
             InstructionType::Comp => {

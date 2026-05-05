@@ -44,11 +44,12 @@ in ram is `*4`, and the value of the word charlie points to is `*charlie`.
 
 ### Instructions
 | Mnemonic | Arguments        | Purpose                                      |
-| -------- | ---------------- | ------------------------------------------   |
+| -------- | ---------------- | -------------------------------------------- |
 | `move`   | `source`, `dest` | Copy the value of `source` to `dest`         |
-| `add`    | `source`, `dest` | Add the value of `source` onto `dest`        |
-| `sub`    | `source`, `dest` | Subtract the value of `source` from `dest`   |
-| `flip`   | `arg`            | Set arg to its two's complement (eg 1 to -1) |
+| `add`    | `source`, `dest` | `dest` = `dest` + `source`                   |
+| `sub`    | `source`, `dest` | `dest` = `dest` - `source`                   |
+| `mul`    | `source`, `dest` | `dest` = `dest` * `source`                   |
+| `div`    | `source`, `dest` | `dest` = `dest` / `source`                   |
 | `comp`   | `arg1`, `arg2`   | Compare `arg1` and `arg2`, store in `canada` |
 | `and`    | `arg1`, `arg2`   | And all bits of `arg1` with `arg2`           |
 | `or`     | `arg1`, `arg2`   | Or all bits of `arg1` with `arg2`            |

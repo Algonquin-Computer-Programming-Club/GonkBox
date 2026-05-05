@@ -231,9 +231,10 @@ pub enum InstructionType {
     // math
     Add,
     Sub,
+    Mul,
+    Div,
     Inc,
     Dec,
-    Flip,
 
     // logic
     Comp,
@@ -266,6 +267,14 @@ const INSTRUCTION_TYPES: phf::Map<&'static str, Descriptor<InstructionType>> = p
         key_type: InstructionType::Sub,
         argument_descriptors: &[ARGDESC_GENERAL, ARGDESC_GENERAL],
     },
+    "mul" => Descriptor {
+        key_type: InstructionType::Mul,
+        argument_descriptors: &[ARGDESC_GENERAL, ARGDESC_GENERAL],
+    },
+    "div" => Descriptor {
+        key_type: InstructionType::Div,
+        argument_descriptors: &[ARGDESC_GENERAL, ARGDESC_GENERAL],
+    },
     "inc" => Descriptor {
         key_type: InstructionType::Inc,
         argument_descriptors: &[ARGDESC_GENERAL],
@@ -273,10 +282,6 @@ const INSTRUCTION_TYPES: phf::Map<&'static str, Descriptor<InstructionType>> = p
     "dec" => Descriptor {
         key_type: InstructionType::Dec,
         argument_descriptors: &[ARGDESC_GENERAL],
-    },
-    "flip" => Descriptor {
-        key_type: InstructionType::Flip,
-        argument_descriptors: &[ARGDESC_REGONLY],
     },
 
     "comp" => Descriptor {

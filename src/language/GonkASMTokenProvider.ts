@@ -10,7 +10,7 @@ export const GonkASMTokenProvider: languages.IMonarchLanguage = {
 
 	instructions: [
 		'move',
-		'add', 'sub', 'inc', 'dec', 'flip', 'comp',
+		'add', 'sub', 'mul', 'div', 'inc', 'dec', 'comp',
 		'jump', 'jumpe', 'jumpne', 'jumpl', 'jumpg',
 		'stop'
 	],

@@ -1,0 +1,96 @@
+label byte_buffer dbytes 16
+label str_end istr "\n"
+
+label number_a iword 0
+label number_b iword 1
+
+label spare_a dword
+label spare_b dword
+label spare_c dword
+
+label print_number_b
+move 0 tim
+move zero_loop microwave
+label zero_loop
+move byte_buffer bill
+add tim bill
+move 0 charlie
+move charlie_l *bill
+inc tim
+comp tim 15
+jumpne
+
+move 0 tim
+move *number_b bill
+
+label print_loop
+move bill charlie
+div 10 bill
+mul 10 bill
+sub bill charlie
+div 10 bill
+
+move bill *spare_a
+move charlie *spare_b
+move tim *spare_c
+
+move byte_buffer tim
+move print_shift_inner_loop_a microwave
+label print_shift_inner_loop_a
+inc tim
+move *tim charlie
+comp charlie 0
+jumpne
+move print_shift_inner_loop_b microwave
+label print_shift_inner_loop_b
+dec tim
+move *tim charlie
+inc tim
+move charlie *tim
+dec tim
+comp byte_buffer tim
+jumpne
+
+move *spare_a bill
+move *spare_b charlie
+move *spare_c tim
+
+add '0' charlie
+move charlie_l *byte_buffer
+
+inc tim
+comp bill 0
+move print_loop microwave
+jumpne
+
+add byte_buffer tim
+move *str_end charlie
+move charlie *tim
+
+$PRINT byte_buffer
+move print_return microwave
+jump
+
+label start
+move 0 bill
+move 0 charlie
+move 0 tim
+
+label loop
+move *number_a bill
+move *number_b charlie
+add bill charlie
+move *number_b bill
+move charlie *number_b
+move bill *number_a
+
+move print_number_b microwave
+jump
+
+label print_return
+move *number_b charlie
+comp charlie 10000
+move loop microwave
+jumpl
+
+stop
