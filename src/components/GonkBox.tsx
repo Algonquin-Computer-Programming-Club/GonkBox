@@ -188,9 +188,11 @@ function GonkBox({ source }: GonkBoxInputs) {
 		setSpeed((event.target as HTMLInputElement).valueAsNumber);
 	};
 
-	const onCanvasWheel = (event: React.WheelEvent) => {
-		setMemoryScroll(s => Math.min(Math.max(s + event.deltaY * 0.01, 0), 0xfc));
-	};
+	// const onCanvasWheel = (event: React.WheelEvent) => {
+	// 	setMemoryScroll(s => Math.min(Math.max(s + event.deltaY * 0.01, 0), 0xfc));
+	// };
+
+	// <canvas className="HexViewerCanvas" onWheelCapture={onCanvasWheel} ref={canvasRef}></canvas>
 
 	return <div className="GonkBox">
 		<div id="GonkBoxTopbar" className="Topbar">
@@ -240,7 +242,6 @@ function GonkBox({ source }: GonkBoxInputs) {
 					</tbody>
 				</table>
 			</div>
-			<canvas className="HexViewerCanvas" onWheelCapture={onCanvasWheel} ref={canvasRef}></canvas>
 			<textarea
 				className="GonkBoxConsole"
 				spellCheck="false"
