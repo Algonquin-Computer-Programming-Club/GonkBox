@@ -119,7 +119,7 @@ button:hover {
 
 .HexViewerCanvas {
 	width: 100%;
-	height: 100%;
+	height: 30vh;
 	box-sizing: border-box;
 	border: 2px solid #282828;
 }
