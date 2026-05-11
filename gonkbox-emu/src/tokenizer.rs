@@ -2,7 +2,65 @@ use std::collections::HashMap;
 
 use wasm_bindgen::prelude::*;
 
-use crate::asm_parser::{GonkASMToken, GonkASMTokenType};
+use strum_macros::AsRefStr;
+
+#[wasm_bindgen]
+#[derive(AsRefStr, Clone, Copy, Debug, PartialEq)]
+pub enum GonkASMTokenType {
+    Command,
+    Instruction,
+    RamBracket,
+    Separator,
+    Label,
+    Register,
+    Identifier,
+    ImmediateLiteral,
+    StringLiteral,
+    StringLiteralEscape,
+    Macro,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Clone, Debug)]
+pub struct GonkASMToken {
+    pub value: String,
+    pub token_type: GonkASMTokenType,
+    pub line: usize,
+    pub range_start: usize,
+    pub range_end: usize,
+}
+
+#[wasm_bindgen]
+impl GonkASMToken {
+    #[wasm_bindgen(constructor)]
+    pub fn new(
+        value: String,
+        token_type: GonkASMTokenType,
+        line: usize,
+        range_start: usize,
+        range_end: usize,
+    ) -> GonkASMToken {
+        GonkASMToken {
+            value,
+            token_type,
+            line,
+            range_start,
+            range_end,
+        }
+    }
+
+    pub fn get_line(&self) -> usize {
+        self.line
+    }
+
+    pub fn get_range_start(&self) -> usize {
+        self.range_start
+    }
+
+    pub fn get_range_end(&self) -> usize {
+        self.range_end
+    }
+}
 
 #[wasm_bindgen]
 #[derive(Clone, Debug)]

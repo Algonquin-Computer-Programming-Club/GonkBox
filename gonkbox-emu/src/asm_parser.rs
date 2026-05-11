@@ -15,76 +15,7 @@ use phf::phf_map;
 
 use crate::util;
 
-/*
- *  TOKENS
- */
-#[wasm_bindgen]
-#[derive(AsRefStr, Clone, Copy, Debug, PartialEq)]
-pub enum GonkASMTokenType {
-    Command,
-    Instruction,
-    RamBracket,
-    Separator,
-    Label,
-    Register,
-    Identifier,
-    ImmediateLiteral,
-    StringLiteral,
-    StringLiteralEscape,
-    Macro,
-}
-
-#[wasm_bindgen]
-#[derive(Clone, Debug)]
-pub struct GonkASMToken {
-    value: String,
-    token_type: GonkASMTokenType,
-    line: usize,
-    range_start: usize,
-    range_end: usize,
-}
-
-#[wasm_bindgen]
-impl GonkASMToken {
-    #[wasm_bindgen(constructor)]
-    pub fn new(
-        value: String,
-        token_type: GonkASMTokenType,
-        line: usize,
-        range_start: usize,
-        range_end: usize,
-    ) -> GonkASMToken {
-        GonkASMToken {
-            value,
-            token_type,
-            line,
-            range_start,
-            range_end,
-        }
-    }
-
-    fn test_new(value: String, token_type: GonkASMTokenType) -> GonkASMToken {
-        GonkASMToken {
-            value,
-            token_type,
-            line: 0,
-            range_start: 0,
-            range_end: 0,
-        }
-    }
-
-    pub fn get_line(&self) -> usize {
-        self.line
-    }
-
-    pub fn get_range_start(&self) -> usize {
-        self.range_start
-    }
-
-    pub fn get_range_end(&self) -> usize {
-        self.range_end
-    }
-}
+use crate::tokenizer::{GonkASMToken, GonkASMTokenType};
 
 /*
  * PROGRAM MAPPING

@@ -1,7 +1,7 @@
 import { Monaco } from "@monaco-editor/react";
 import { languages, } from "monaco-editor";
 
-export const GonkASMCompletionItemProvider = (monaco: Monaco) => {
+export const GonkASMCompletionItemProvider = (_monaco: Monaco) => {
 	return {
 		provideCompletionItems: (model, position) => {
 			var word = model.getWordUntilPosition(position);
@@ -11,191 +11,84 @@ export const GonkASMCompletionItemProvider = (monaco: Monaco) => {
 				startColumn: word.startColumn,
 				endColumn: word.endColumn,
 			};
-			var suggestions = [
-				{
-					label: "move",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "move ${1:source}, ${2:destination}",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range,
-
-					documentation: "**move:** Copy the value of `source` to `dest`"
-				},
-
-				{
-					label: "add",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "add ${1:source}, ${2:destination}",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range,
-
-					documentation: "**add:** Add the value of `source` onto `dest`"
-				},
-
-				{
-					label: "sub",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "sub ${1:source}, ${2:destination}",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range,
-
-					documentation: "**sub:** Subtract the value of `source` from `dest`"
-				},
-
-				{
-					label: "inc",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "add ${1:arg}",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range,
-
-					documentation: "**inc:** Increment `arg` by 1"
-				},
-
-				{
-					label: "dec",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "dec ${1:arg}",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range,
-
-					documentation: "**dec:** Decrement `arg` by 1"
-				},
-
-				{
-					label: "flip",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "flip ${1:arg}",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range,
-
-					documentation: "**flip:** Transform `arg` into it's opposite (two's complement)"
-				},
-
-				{
-					label: "comp",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "comp ${1:arg1}, ${2:arg2}",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range,
-
-					documentation: "**comp:** Compare `arg1` and `arg2`, store in `<cr>`"
-				},
-
-				{
-					label: "jump",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					insertText: "jump",
-					range: range,
-				},
-				{
-					label: "jumpe",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					insertText: "jumpe",
-					range: range,
-				},
-				{
-					label: "jumpne",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					insertText: "jumpne",
-					range: range,
-				},
-				{
-					label: "jumpl",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					insertText: "jumpl",
-					range: range,
-				},
-				{
-					label: "jumpg",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					insertText: "jumpg",
-					range: range,
-				},
-
-				{
-					label: "stop",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					insertText: "stop",
-					range: range,
-
-					documentation: "**stop:** Stop execution of the program"
-				},
-
-				{
-					label: "dbyte",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					insertText: "dbyte",
-					range: range
-				},
-				{
-					label: "dbytes",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "dbytes ${1:n}",
-					range: range
-				},
-
-				{
-					label: "ibyte",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "ibyte ${1:def}",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range
-				},
-				{
-					label: "ibytes",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "ibytes ${1:n} ${2:def}",
-					range: range
-				},
-
-				{
-					label: "istr",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "istr \"${1:str}\"",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range
-				},
-				{
-					label: "istrn",
-					kind: monaco.languages.CompletionItemKind.Keyword,
-					// eslint-disable-next-line
-					insertText: "istrn ${1:n} \"${2:str}\"",
-					insertTextRules:
-						monaco.languages.CompletionItemInsertTextRule
-							.InsertAsSnippet,
-					range: range
-				},
+			var registers = [
+				"bill", "bill_l", "bill_h",
+				"charlie", "charlie_l", "charlie_h",
+				"tim", "tim_l", "tim_h",
+				"microwave"
 			];
+			var instructions = [
+				{ name: "move", args: 2 },
+
+				{ name: "add", args: 2 },
+				{ name: "sub", args: 2 },
+				{ name: "mul", args: 2 },
+				{ name: "div", args: 2 },
+				{ name: "inc", args: 1 },
+				{ name: "dec", args: 1 },
+
+				{ name: "comp", args: 2 },
+				{ name: "jump", args: 0 },
+				{ name: "jumpe", args: 0 },
+				{ name: "jumpne", args: 0 },
+				{ name: "jumpg", args: 0 },
+				{ name: "jumpl", args: 0 },
+
+				{ name: "dlogn", args: 1 },
+				{ name: "dlogc", args: 1 },
+				{ name: "dlogs", args: 1 },
+			];
+			var commands = [
+				{ name: "dbyte", args: 0 },
+				{ name: "dbytes", args: 1 },
+				{ name: "ibyte", args: 1 },
+				{ name: "ibytes", args: 2 },
+
+				{ name: "istr", args: 1 },
+				{ name: "istrn", args: 2 },
+
+				{ name: "dword", args: 0 },
+				{ name: "dwords", args: 1 },
+				{ name: "iword", args: 1 },
+				{ name: "iwords", args: 2 },
+			];
+			var suggestions: languages.CompletionItem[] = [];
+			registers.forEach((x) => {
+				suggestions.push({
+					label: x,
+					kind: languages.CompletionItemKind.Keyword,
+					insertText: x,
+					range,
+				} as languages.CompletionItem);
+			});
+
+			instructions.forEach((x) => {
+				let insert = x.name;
+				for (let i = 0; i < x.args; i++) {
+					insert += " ${" + (i + 1) + ":arg" + (i + 1) + "}";
+				}
+				suggestions.push({
+					label: x.name,
+					kind: languages.CompletionItemKind.Function,
+					insertText: insert,
+					insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+					range,
+				} as languages.CompletionItem);
+			});
+
+			commands.forEach((x) => {
+				let insert = x.name;
+				for (let i = 0; i < x.args; i++) {
+					insert += " ${" + (i + 1) + ":arg" + (i + 1) + "}";
+				}
+				suggestions.push({
+					label: x.name,
+					kind: languages.CompletionItemKind.Constructor,
+					insertText: insert,
+					insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+					range,
+				} as languages.CompletionItem);
+			});
 			return { suggestions: suggestions };
 		}
 	} as languages.CompletionItemProvider;

@@ -37,5 +37,18 @@ export const GonkASMThemeData: monaco.editor.IStandaloneThemeData = {
 
 		"editorLineNumber.activeForeground": "#fbf1c7",
 		"editorLineNumber.foreground": "#a89984",
+
+		"editor.selectionBackground": "#458588",
+
+		"dropdown.background": "#282828",
+		"dropdown.border": "#1d2021",
+		"dropdown.foreground": "#fbf1c7",
+
+		"editorWidget.background": "#282828",
+		"editorWidget.border": "#1d2021",
+		"input.background": "#32302f",
+		"input.foreground": "#fbf1c7",
+
+		"scrollbar.shadow": "#32302f",
 	},
 };
