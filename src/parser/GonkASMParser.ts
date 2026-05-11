@@ -6,7 +6,8 @@ class GonkASMParser {
 	program: ProgramBinary | null = null;
 
 	parse(source: string, monaco: Monaco) {
-		let tokenizer = new Tokenizer(source);
+		let source_copy = source;
+		let tokenizer = new Tokenizer(source_copy);
 		try {
 			let tokens = tokenizer.build();
 
@@ -39,7 +40,9 @@ class GonkASMParser {
 	}
 
 	getProgram(): ProgramBinary | null {
-		return this.program;
+		let program = this.program;
+		this.program = null;
+		return program;
 	}
 }
 

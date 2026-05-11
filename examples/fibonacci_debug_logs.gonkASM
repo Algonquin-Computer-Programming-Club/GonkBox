@@ -1,22 +1,40 @@
-label msg istr "Fibonacci Numbers!\n"
+label start_msg istr "Fibonacci Numbers!\n"
+label first_msg istr "("
+label pair_msg istr " + "
+label eq_msg istr "): "
+label next_msg istr "\n"
+label finish_msg istr "Finished!\n"
 
 label start
-move msg bill
+move start_msg bill
 dlogs bill
-
 move 0 bill
 move 1 charlie
-
 move loop microwave
+
 label loop
+move first_msg tim
+dlogs tim
+dlogn bill
+move pair_msg tim
+dlogs tim
+dlogn charlie
+move eq_msg tim
+dlogs tim
+
 move bill tim
 add charlie tim
 move charlie bill
 move tim charlie
-dlogn charlie
-move '\n' tim
-dlogc tim
+
+dlogn tim
+move next_msg tim
+dlogs tim
 comp charlie 30000
+
 jumpl
+
+move finish_msg bill
+dlogs bill
 
 stop

@@ -197,7 +197,7 @@ function GonkBox({ source }: GonkBoxInputs) {
 			<button onClick={stepButton}>Step</button>
 			<span className="TopbarDivider">|</span>
 			<button onClick={toggleRunning}>{running ? "Stop" : "Run"}</button>
-			<input className="Slider" name="Step Length (ms)" type="range" defaultValue={500} min={10} max={500} step={10} onInput={onInputSpeed}></input>
+			<input className="Slider" name="Step Length (ms)" type="range" defaultValue={500} min={5} max={500} step={5} onInput={onInputSpeed}></input>
 			<p className="Readout">{speed.toString(10)}ms</p>
 			<span className="TopbarDivider">|</span>
 			<button onClick={clearConsole}>Clear Console</button>
