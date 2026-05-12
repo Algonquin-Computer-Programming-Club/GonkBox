@@ -1,0 +1,18 @@
+label start
+move 2 bill         ; write byte starts at 2
+move 1 charlie_l    ; charlie_l (first byte of charlie) is flag
+move 'A' charlie_h  ; charlie_h (second byte of charlie) is data
+move charlie *bill  ; put charlie into the io bytes (execute write)
+
+move low_flag_loop microwave
+label low_flag_loop
+move *2 charlie_l   ; put the flag into charlie_l
+comp charlie_l 0    ; check if the flag is low
+jumpne              ; if the flag is still high, continue looping
+
+move 2 bill         ; execute a second write
+move 1 charlie_l
+move 'B' charlie_h
+move charlie *bill
+
+stop

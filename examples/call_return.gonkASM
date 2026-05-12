@@ -1,0 +1,19 @@
+label msg istr "Hello, world!\n"
+label return dword          ; word to store return address
+
+label add_func
+add bill charlie            ; arbitrary execution
+move *return microwave      ; set destination to return address
+jump                        ; return
+
+label start
+move 12 bill                ; default values
+move 23 charlie
+move add_func microwave     ; set destination to function address
+move return_pos tim         ; set return
+move tim *return
+jump                        ; "call" function
+
+label return_pos            ; point to go to after calling
+dlogn charlie
+stop

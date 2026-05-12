@@ -1,0 +1,6 @@
+label start
+move 2 bill         ; write byte starts at 2
+move 1 charlie_l    ; charlie_l (first byte of charlie) is flag
+move 'A' charlie_h  ; charlie_h (second byte of charlie) is data
+move charlie *bill  ; put charlie into the io bytes (execute write)
+stop
